@@ -5,6 +5,11 @@ October 30. The first release will be **0.1.0-alpha.1**, marked as a GitHub
 prerelease. This is a usable early preview, not the complete 1.0 product.
 The full [requirement register](ROADMAP.md) remains in scope.
 
+November 2 update: development has continued through the
+[social framing checkpoint](REFRAMING-CHECKPOINT.md). The original November 1
+target has passed; it does not imply that the preview gates below are complete.
+No release or tag is created by these development commits.
+
 ## Work toward the date
 
 | Date | Deliverable |

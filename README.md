@@ -35,14 +35,17 @@ Drag cut boundaries in the timeline or refine them numerically.
 Adjust RGB curves, levels and selective HSL, edit drawing strokes directly, and
 match caption styles across a track. Choose installed font families and weights,
 or add timed emoji and transparent
-image stickers from the toolbar.
+image stickers from the toolbar. Animate position and zoom with motion keys,
+and choose a portrait, square, landscape or 4:5 project canvas. Social safe guides
+stay out of exports.
 
 Projects save as `.lifeedit` packages. Reference your originals or collect media
 into a portable project. Preview and export use the same compositor; exports use
 full-quality media and a fixed snapshot of your edit.
 
 Export video as H.264, HEVC or ProRes, or audio as WAV, AIFF or M4A. Choose the whole
-sequence or a range. See the [tested formats](docs/FORMATS.md) for import coverage.
+sequence or a range, with captions burned in or a clean picture plus separately
+exported SRT. See the [tested formats](docs/FORMATS.md) for import coverage.
 
 ## Build and try it
 

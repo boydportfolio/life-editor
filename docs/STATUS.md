@@ -35,7 +35,7 @@ multicam red→blue cuts, codecs/channels, collection transfer and cancellation.
   full keyframe copy/paste/multi-point editing and animation of other parameters.
 - Loops/crossfades/reverse and speed ramps; broader freeze integration.
 - White-balance sampling; complete social text animation
-  and animated reframing. Local transcription
+  and animated crop/rotation plus other parameter keyframes. Local transcription
   has capability/privacy guards and source-time mapping but needs real speech QA.
 - Comprehensive metadata/VFR/HDR handling and broad tested codec/container matrix.
 - Complete native document integration and migration paths; disconnected/full-disk
@@ -197,3 +197,15 @@ safe guides, direct SRT/manual caption access, previous/next cue navigation and
 styled consecutive cues without moving existing captions. Automatic reuse skips
 hidden tracks. Export opens with the exact project canvas instead of defaulting
 every composition to landscape. No schema change is required.
+
+The [social framing checkpoint](REFRAMING-CHECKPOINT.md) adds position/zoom
+animation with exact edit clocks, evaluated viewer handles and shared rendering;
+portrait/landscape/square/4:5 project canvas choices survive first-video import.
+Caption burn-in is now an explicit video export option, with clean video preserving
+other titles and SRT timing. Schema 10 protects motion and canvas intent; versions
+1–9 migrate. General animated crop/rotation and word highlighting remain open.
+
+November 2 clean native/helper validation passes 303 tests across 15 suites.
+Two earlier processes crashed inside native AVFoundation reader calls; isolated
+fixtures and the stable-source clean suite pass. The crash cause is unconfirmed
+and remains in release QA notes rather than being represented as a fixed defect.

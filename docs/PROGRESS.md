@@ -1,6 +1,6 @@
 # Progress toward 1.0
 
-Updated: 2026-10-28. Overall planning estimate: **about 65%** of the full owner
+Updated: 2026-11-02. Overall planning estimate: **about 65%** of the full owner
 scope, with a rough **60–70% range**. This is an engineering estimate of integrated
 behavior and remaining work, not a percentage of checked boxes, lines of code or
 passing tests. It is not a release-readiness score.
@@ -13,7 +13,7 @@ stay open until every part of the requirement and its acceptance evidence exists
 | Phase 0: risky foundations | Technical gate verified locally: real layered edit, save/reopen, shared-render export, sample placement and four proxy previews. | M1 performance measurements belong to the release gate. |
 | Phase 1: everyday editing | Most everyday paths implemented: layered editing, guarded placement, rational timing, waveforms/proxies, automation, project recovery and six export formats. | Complete track/document commands, broader linked editing and failure coverage, animation beyond volume/opacity, full VFR/HDR/format matrix. |
 | Phase 2: music and multicam | Beat/manual grids, waveform/timecode/marker sync, reviewed clock correction, persistent master, armed switching, range replacement and direct cut refinement are integrated, with a connected four-camera native fixture. | Loops/crossfades, reverse, speed ramps, metronome and broader real-footage/performance workflow validation. |
-| Phase 3: creator toolkit | Original filters/transitions, adjustment layers, tonal controls, text families/entrances, shared background geometry/borders/shadows, text alignment/spacing and layout recipes, editable drawing, RGB curves/levels/selective HSL, caption styles, color picker and SRT workflows are integrated. | White-balance sampling, word highlighting and remaining creative animation, general keyframes, animated reframing and real on-device speech QA. |
+| Phase 3: creator toolkit | Original filters/transitions, adjustment layers, tonal controls, text families/entrances, shared background geometry/borders/shadows, text alignment/spacing and layout recipes, editable drawing, RGB curves/levels/selective HSL, caption styles, color picker, position/zoom keyframes, social canvases and SRT/clean-caption delivery are integrated. | White-balance sampling, word highlighting, animated crop/rotation and other general parameter keyframes, and real on-device speech QA. |
 | Phase 4: release quality | CI, optimized source builds, helper licensing, native integration tests and UI render checks are in place. | Full accessibility/keyboard audit, musician/student usability, M1 profiling/adaptive quality, failure matrix and all three demonstrated owner workflows. |
 
 ## Current phase: creator toolkit
@@ -46,7 +46,7 @@ Next Phase 2 priorities: explicit audio looping with adjustable crossfades, reve
 and speed ramps, remaining musical-grid controls/metronome, and broader workflow
 and performance coverage. Earlier incomplete requirements remain in the register.
 
-Latest local verification: 277 tests across 15 suites in the full native/helper
+Latest local verification: 303 tests across 15 suites in the full native/helper
 run and the optimized ad-hoc app build pass. Hosted CI is checked separately after
 publishing. See [verification](VERIFICATION.md) for dates and practical limits.
 
@@ -73,3 +73,14 @@ guides, direct caption access/sequencing and project-canvas export defaults.
 app interaction is verified; the complete manual media/release workflow remains
 open. The overall planning estimate is unchanged; these additions do not close
 broad phase gates.
+
+The November 2 [social framing checkpoint](REFRAMING-CHECKPOINT.md) adds
+position/zoom animation, persistent visual canvas choices and optional caption
+burn-in. Static crop/rotation, other general parameter animation, word timing and
+speech QA remain open. Each feature is kept in a focused commit; broad phase
+checkboxes remain open until their complete acceptance criteria are met.
+
+Stable-source clean verification on November 2 passes 303 tests across 15 suites,
+including native media/helpers. Earlier combined test processes hit native
+AVFoundation crashes; isolated fixtures and the clean complete run pass, with the
+unconfirmed cause retained in the checkpoint notes. Manual release gates remain open.

@@ -360,3 +360,25 @@ The subsequent file-picker/inspection failure leaves manual real-media import
 and the full release smoke gate open. This is partial native UI verification,
 not full accessibility, usability, M1 or release acceptance. Hosted CI was not run
 for these local changes.
+
+
+## November 2 social framing
+
+The [social framing checkpoint](REFRAMING-CHECKPOINT.md) passes **303 tests across
+15 suites** in a stable-source clean directory with native media/helpers enabled.
+The run includes collected/reopened image/title/shape motion, decoded ProRes
+comparison, exact edit clocks/undo, legacy migration, malformed keys, left
+extensions, exclusive/non-grid freeze ends, compact controls, portrait 1080 × 1920
+preview/export and clean/captioned range exports. The existing four-camera and
+12-export concurrency fixtures pass in the same run.
+
+Two earlier combined processes crashed inside AVFoundation reader startup/sample
+copying. The four-camera and concurrency fixtures also pass in isolation. No
+ownership/media-engine change is claimed to resolve these crashes; the clean pass
+establishes the current validation result while their cause remains unconfirmed.
+Use a clean scratch directory after core model layout changes. Full manual
+keyboard/VoiceOver, installation/media workflow and M1/usability gates stay open.
+
+A separate clean optimized app build passes, including strict ad-hoc signature
+verification and bundled LGPL helper/license/inventory checks. No release or tag
+is produced by this validation.
