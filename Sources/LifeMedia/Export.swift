@@ -20,10 +20,26 @@ public struct ExportOptions: Sendable {
     public var frameRate: FrameRate?
     public var rangeStart: RationalTime?
     public var rangeDuration: RationalTime?
+    /// Draw caption tracks into video. SRT sidecars and the saved project are unchanged.
+    public var burnInCaptions: Bool
     public init(format: ExportFormat = .h264, width: Int? = nil, height: Int? = nil,
-                frameRate: FrameRate? = nil, rangeStart: RationalTime? = nil, rangeDuration: RationalTime? = nil) {
+                frameRate: FrameRate? = nil, rangeStart: RationalTime? = nil, rangeDuration: RationalTime? = nil, burnInCaptions: Bool = true) {
         self.format = format; self.width = width; self.height = height; self.frameRate = frameRate
-        self.rangeStart = rangeStart; self.rangeDuration = rangeDuration
+        self.rangeStart = rangeStart; self.rangeDuration = rangeDuration; self.burnInCaptions = burnInCaptions
+    }
+    func applying(to original:ProjectDocument)->ProjectDocument {
+        var document=original
+        if let width{document.sequence.settings.width=width}
+        if let height{document.sequence.settings.height=height}
+        if let frameRate{document.sequence.settings.frameRate=frameRate}
+        if !burnInCaptions {
+            // Hide rather than remove: caption-only projects and captions extending
+            // past media retain the same duration and selected-range coordinates.
+            for index in document.sequence.tracks.indices where document.sequence.tracks[index].kind == .caption {
+                document.sequence.tracks[index].isHidden=true
+            }
+        }
+        return document
     }
 }
 

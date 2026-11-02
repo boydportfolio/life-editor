@@ -10,6 +10,7 @@ struct ExportSheet:View {
     @State private var aspect = ExportCanvas.project
     @State private var rate=0
     @State private var selectedRange=false
+    @State private var burnInCaptions=true
     var body:some View {
         VStack(alignment:.leading,spacing:18){
             HStack{Text("Export").font(.headline);Spacer();Button{dismiss()}label:{Image(systemName:"xmark")}.buttonStyle(.plain).help("Close export").accessibilityLabel("Close export").disabled(store.exporting)}
@@ -25,11 +26,15 @@ struct ExportSheet:View {
                     }else{
                         Picker("Size",selection:$size){Text("720p").tag(720);Text("1080p").tag(1080);Text("4K").tag(2160)}.pickerStyle(.segmented)
                     }
+                    if store.document.sequence.tracks.contains(where:{$0.kind == .caption && !$0.clips.isEmpty}) {
+                        Toggle(isOn:$burnInCaptions){Label("Burn in captions",systemImage:"captions.bubble")}
+                            .help("Include captions in the picture; export SRT separately from Captions")
+                    }
                     Picker("FPS",selection:$rate){Text("Project").tag(0);Text("24").tag(24);Text("25").tag(25);Text("29.97").tag(2997);Text("30").tag(30);Text("50").tag(50);Text("59.94").tag(5994);Text("60").tag(60)}
                 }
                 Toggle("Selected clip range",isOn:$selectedRange).disabled(store.selectedClip==nil)
                 HStack{Spacer();Button("Export…"){
-                    var options=ExportOptions(format:format)
+                    var options=ExportOptions(format:format,burnInCaptions:burnInCaptions)
                     if format.hasVideo,let dimensions=aspect.dimensions(shortEdge:size) {options.width=dimensions.width;options.height=dimensions.height}
                     if rate>0 {options.frameRate = rate==2997 ? .init(numerator:30000,denominator:1001):rate==5994 ? .init(numerator:60000,denominator:1001):.init(numerator:Int64(rate))}
                     if selectedRange,let clip=store.selectedClip{options.rangeStart=clip.start;options.rangeDuration=clip.duration}

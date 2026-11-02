@@ -256,10 +256,7 @@ extension RationalTime {
         guard !snapshot.document.assets.contains(where: { $0.url.standardizedFileURL.resolvingSymlinksInPath() == canonicalDestination || $0.preparedURL?.standardizedFileURL.resolvingSymlinksInPath() == canonicalDestination }) else {
             throw MediaError.protectsOriginal
         }
-        var document = snapshot.document
-        if let width = options.width { document.sequence.settings.width = width }
-        if let height = options.height { document.sequence.settings.height = height }
-        if let frameRate = options.frameRate { document.sequence.settings.frameRate = frameRate }
+        let document = options.applying(to:snapshot.document)
         let compiled = try await compile(.init(document: document))
         let lease = CacheLease(compiled.cacheURLs)
         defer { withExtendedLifetime(lease) {} }
