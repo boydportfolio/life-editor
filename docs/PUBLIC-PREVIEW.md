@@ -27,9 +27,11 @@ The full [requirement register](ROADMAP.md) remains in scope.
 - [ ] Release notes match actual features, known issues and signing status.
 
 Passing unit/integration fixtures does not automatically close manual gates.
-Native computer-use inspection currently fails to start on this host. That remains
-an explicit limitation until actual launch/interaction is verified; component-view
-renders and exported frames do not stand in for it.
+November 1 native inspection now verifies launch, caption editing/navigation and
+safe-guide choices. A later file-picker/inspection failure leaves real-media
+import and the full manual smoke unverified. Component-view renders and exported
+frames do not stand in for those gates. See [social delivery](SOCIAL-DELIVERY.md)
+for the current evidence and limits.
 
 ## Packaging
 

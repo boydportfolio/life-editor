@@ -47,3 +47,9 @@ The [creative controls checkpoint](CREATIVE-CHECKPOINT.md) integrates RGB curves
 levels, selective HSL, editable drawing geometry and caption styles in a collected
 portrait project. White-balance sampling, general animation and word highlighting
 remain open; this checkpoint does not close the full creative-workflow gate.
+
+The [social delivery checkpoint](SOCIAL-DELIVERY.md) adds composition-aligned,
+preview-only title/action and conservative social guides, direct caption entry,
+cue navigation and styled consecutive cues with gap/lock protection. Export now
+defaults to the exact project canvas. Word highlighting, animated reframing and
+speech QA remain open; these additions do not close the combined workflow gate.

@@ -191,3 +191,9 @@ curves, levels and selective HSL; editable drawing strokes/points and accurate
 erasing; four caption styles and track matching. Schema 9 protects the new color
 processing. A connected portable portrait project reproduces decoded export after
 reopening. The new-project first-edit undo identity mismatch is also fixed.
+
+The [social delivery checkpoint](SOCIAL-DELIVERY.md) adds preview-only composition
+safe guides, direct SRT/manual caption access, previous/next cue navigation and
+styled consecutive cues without moving existing captions. Automatic reuse skips
+hidden tracks. Export opens with the exact project canvas instead of defaulting
+every composition to landscape. No schema change is required.

@@ -4,7 +4,8 @@ Status: **planned** unless marked otherwise. A model field or a control alone do
 not complete a feature. Completion requires UI, persistence, undo, preview,
 export and relevant verification. This register retains the owner's full scope.
 
-Latest checkpoint: [creative controls](CREATIVE-CHECKPOINT.md): RGB curves, levels,
+Latest social delivery: [safe guides and caption sequencing](SOCIAL-DELIVERY.md).
+Creative checkpoint: [creative controls](CREATIVE-CHECKPOINT.md): RGB curves, levels,
 selective HSL, editable drawing and reusable caption styles. Earlier completed
 slices: **Phase 3 title backgrounds, alignment/spacing and
 reusable layouts, installed fonts/weights and image/emoji stickers; track solo,

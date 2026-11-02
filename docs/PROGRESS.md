@@ -65,3 +65,11 @@ The October 28 creator slice adds installed font family/face/weight selection,
 timed transparent image stickers and editable color emoji, with native export,
 persistence and undo checks. Manual UI acceptance and the broader phase gates
 remain open; native fixture validation now uses sequential outer test execution.
+
+
+November 1: [social delivery](SOCIAL-DELIVERY.md) adds composition-safe viewer
+guides, direct caption access/sequencing and project-canvas export defaults.
+286 local native/helper tests and the optimized app build pass. Partial running
+app interaction is verified; the complete manual media/release workflow remains
+open. The overall planning estimate is unchanged; these additions do not close
+broad phase gates.

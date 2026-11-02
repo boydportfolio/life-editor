@@ -342,3 +342,21 @@ Preview/export PCM agrees within one 16-bit LSB. App command tests cover mode ma
 unavailable audio and one-action range undo. NTSC transport retains a rational
 clock; 3,000 forward/backward steps are exact, and full-width quantization handles
 valid long prime-denominator times without intermediate overflow.
+
+
+## November 1 social delivery
+
+The [social delivery checkpoint](SOCIAL-DELIVERY.md) passes 286 local tests across
+15 suites with native integration and pinned helpers enabled. The connected
+portrait fixture checks a manually inserted styled gap cue after collection and
+reopen, with decoded preview/export comparisons during all three cues. Clean
+optimized build, strict ad-hoc signature and helper inventory/license checks pass.
+The camera synchronization UI test now creates its own artifact directory and
+honors LIFE_UI_ARTIFACTS, removing its test-order dependency.
+
+Native app interaction confirms caption entry/text editing, consecutive cues,
+navigation and safe-guide choices; a genuine running-app capture was inspected.
+The subsequent file-picker/inspection failure leaves manual real-media import
+and the full release smoke gate open. This is partial native UI verification,
+not full accessibility, usability, M1 or release acceptance. Hosted CI was not run
+for these local changes.
