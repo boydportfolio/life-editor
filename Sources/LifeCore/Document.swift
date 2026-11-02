@@ -46,9 +46,10 @@ public struct Clip: Identifiable, Codable, Equatable, Sendable {
     public var speed: Double; public var preservesPitch: Bool; public var audioEnabled:Bool?; public var linkID: UUID?; public var groupID: UUID?
     public var volume: AutomationEnvelope; public var opacity: AutomationEnvelope; public var title: TitleContent?
     public var freezeFrame:FreezeFrameContent?
+    public var visualAnimation:VisualAnimation?
     public var effects: [EffectInstance]?; public var visual: VisualTransform?; public var graphic: GraphicContent?; public var audio: AudioSettings?
-    public init(id: UUID = UUID(), name: String = "Clip", assetID: UUID? = nil, start: RationalTime = .zero, duration: RationalTime, sourceStart: RationalTime = .zero, speed: Double = 1, preservesPitch: Bool = true, linkID: UUID? = nil, volume: AutomationEnvelope = .init(), opacity: AutomationEnvelope = .init(), title: TitleContent? = nil, effects: [EffectInstance]? = nil, visual: VisualTransform? = nil, groupID: UUID? = nil, audioEnabled:Bool? = nil, graphic: GraphicContent? = nil, audio: AudioSettings? = nil, freezeFrame:FreezeFrameContent? = nil) {
-        self.id=id; self.name=name; self.assetID=assetID; self.start=start; self.duration=duration; self.sourceStart=sourceStart; self.speed=speed; self.preservesPitch=preservesPitch; self.linkID=linkID; self.volume=volume; self.opacity=opacity; self.title=title; self.effects=effects; self.visual=visual;self.audioEnabled=audioEnabled; self.groupID=groupID; self.graphic=graphic; self.audio=audio;self.freezeFrame=freezeFrame
+    public init(id: UUID = UUID(), name: String = "Clip", assetID: UUID? = nil, start: RationalTime = .zero, duration: RationalTime, sourceStart: RationalTime = .zero, speed: Double = 1, preservesPitch: Bool = true, linkID: UUID? = nil, volume: AutomationEnvelope = .init(), opacity: AutomationEnvelope = .init(), title: TitleContent? = nil, effects: [EffectInstance]? = nil, visual: VisualTransform? = nil, groupID: UUID? = nil, audioEnabled:Bool? = nil, graphic: GraphicContent? = nil, audio: AudioSettings? = nil, freezeFrame:FreezeFrameContent? = nil, visualAnimation:VisualAnimation? = nil) {
+        self.id=id; self.name=name; self.assetID=assetID; self.start=start; self.duration=duration; self.sourceStart=sourceStart; self.speed=speed; self.preservesPitch=preservesPitch; self.linkID=linkID; self.volume=volume; self.opacity=opacity; self.title=title; self.effects=effects; self.visual=visual;self.audioEnabled=audioEnabled; self.groupID=groupID; self.graphic=graphic; self.audio=audio;self.freezeFrame=freezeFrame;self.visualAnimation=visualAnimation
     }
     public var end: RationalTime { start + duration }
     public func checkedSourceTime(at sequenceTime: RationalTime) throws -> RationalTime {
@@ -118,7 +119,7 @@ public struct Sequence: Codable, Equatable, Sendable {
     public var duration: RationalTime { tracks.flatMap(\.clips).map(\.end).max() ?? .zero }
 }
 public struct ProjectDocument: Identifiable, Codable, Equatable, Sendable {
-    public static let currentVersion = 9
+    public static let currentVersion = 10
     public var version: Int; public var id: UUID; public var name: String; public var sequence: Sequence; public var assets: [MediaAsset]
     public init(id: UUID = UUID(), name: String = "Untitled", sequence: Sequence = .init(), assets: [MediaAsset] = []) { self.version=Self.currentVersion; self.id=id; self.name=name; self.sequence=sequence; self.assets=assets }
     public static func decode(_ data: Data) throws -> Self {
@@ -157,6 +158,10 @@ public struct ProjectDocument: Identifiable, Codable, Equatable, Sendable {
                 guard clip.title == nil, graphic.isValid else { throw DocumentError.invalidTiming }
             }
             if let visual=clip.visual, !visual.isValid { throw DocumentError.invalidTiming }
+            if let animation=clip.visualAnimation {
+                guard !adjustmentIDs.contains(clip.id), animation.isValid,
+                      validTime(try animation.elapsedTime(at:clip.duration),signed:true) else { throw DocumentError.invalidTiming }
+            }
             if let style=clip.title?.style, !style.isValid { throw DocumentError.invalidTiming }
             if let animation=clip.title?.animation {
                 guard animation.isValid, validTime(try animation.elapsedTime(at:clip.duration),signed:true) else { throw DocumentError.invalidTiming }

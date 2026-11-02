@@ -60,6 +60,7 @@ public enum SpliceEditing {
         result.volume.evaluationOffset=try prior.volume.evaluationOffset.checkedAdding(offset)
         result.opacity.evaluationOffset=try prior.opacity.evaluationOffset.checkedAdding(offset)
         if let animation=prior.title?.animation {result.title?.animation=try animation.windowed(by:offset)}
+        if let animation=prior.visualAnimation {result.visualAnimation=try animation.windowed(by:offset)}
         return result
     }
     private static func guardMulticam(_ clips:[Clip],in document:ProjectDocument)throws {
@@ -208,6 +209,7 @@ public enum SpliceEditing {
                     clip.volume.evaluationOffset=try prior.volume.evaluationOffset.checkedAdding(offset)
                     clip.opacity.evaluationOffset=try prior.opacity.evaluationOffset.checkedAdding(offset)
                     if let animation=prior.title?.animation {clip.title?.animation=try animation.windowed(by:offset)}
+                    if let animation=prior.visualAnimation {clip.visualAnimation=try animation.windowed(by:offset)}
                     next.sequence.tracks[t].clips[c]=clip;changed.insert(prior.id)
                 } else if prior.start>=original.end {
                     next.sequence.tracks[t].clips[c].start=try prior.start.checkedAdding(delta);changed.insert(prior.id)

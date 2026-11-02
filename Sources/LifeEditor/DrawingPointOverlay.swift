@@ -7,7 +7,7 @@ struct DrawingPointOverlay:View {
     let canvas:CGSize
     let origin:CGPoint
     @State private var dragging=false
-    private var visual:VisualTransform{store.selectedClip?.visual ?? .init()}
+    private var visual:VisualTransform{store.selectedEvaluatedVisual}
     private var active:Bool{guard let clip=store.selectedClip else{return false};return clip.start.seconds<=store.playhead && store.playhead<clip.end.seconds}
     var body:some View {
         ZStack{

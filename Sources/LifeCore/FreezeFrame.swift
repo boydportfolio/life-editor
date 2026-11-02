@@ -20,6 +20,13 @@ public enum FreezeFrameEditing {
         var frozen=original;frozen.id=UUID();frozen.name=original.name+" · Freeze";frozen.start=original.end;frozen.duration=length;frozen.sourceStart=sourceFrameTime;frozen.speed=1;frozen.audioEnabled=false;frozen.audio=nil;frozen.linkID=nil;frozen.groupID=nil
         frozen.freezeFrame=FreezeFrameContent(sourceTime:sourceFrameTime,effectTimeOffset:original.duration)
         frozen.opacity=original.opacity;frozen.opacity.evaluationOffset=try original.opacity.evaluationOffset.checkedAdding(original.duration)
+        if original.visualAnimation != nil {
+            let rate=document.sequence.settings.frameRate
+            var lastFrame=try rate.checkedQuantized(original.end)
+            if lastFrame>=original.end{lastFrame=try lastFrame.checkedSubtracting(rate.frameDuration)}
+            let lastVisible=max(.zero,try lastFrame.checkedSubtracting(original.start))
+            frozen.visual=original.visualTransform(at:lastVisible);frozen.visualAnimation=nil
+        }
         frozen.volume=AutomationEnvelope(baseValue:0)
         next.sequence.tracks[t].clips.append(frozen);try next.validate();return next
     }

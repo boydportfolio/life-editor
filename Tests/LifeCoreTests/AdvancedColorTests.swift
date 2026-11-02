@@ -15,6 +15,6 @@ import Testing
     invalid=document;invalid.sequence.tracks[0].clips[0].effects?[0].parameters["red2"]=1.1
     #expect(throws:DocumentError.invalidTiming){try invalid.validate()}
     var legacy=document;legacy.version=8;legacy.sequence.tracks[0].clips[0].effects=nil
-    let migrated=try ProjectDocument.decode(JSONEncoder().encode(legacy));#expect(migrated.version==9);#expect(migrated.sequence.tracks[0].clips[0].effects==nil)
-    #expect(throws:DocumentError.unsupportedVersion(10)){try ProjectDocument.decode(Data(#"{"version":10}"#.utf8))}
+    let migrated=try ProjectDocument.decode(JSONEncoder().encode(legacy));#expect(migrated.version==ProjectDocument.currentVersion);#expect(migrated.sequence.tracks[0].clips[0].effects==nil)
+    #expect(throws:DocumentError.unsupportedVersion(999)){try ProjectDocument.decode(Data(#"{"version":999}"#.utf8))}
 }

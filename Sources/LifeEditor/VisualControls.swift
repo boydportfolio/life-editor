@@ -11,7 +11,7 @@ struct VisualControls:View {
     @State private var aspect:CropAspect = .free
     @State private var straightenBase:Double=0
     @State private var straightenAngle:Double=0
-    private var visual:VisualTransform{store.selectedClip?.visual ?? .init()}
+    private var visual:VisualTransform{store.selectedEvaluatedVisual}
     private var canvas:CropSize{.init(width:Double(store.document.sequence.settings.width),height:Double(store.document.sequence.settings.height))}
     private var sourceKey:String {
         let asset=store.document.assets.first{$0.id==store.selectedClip?.assetID}
@@ -19,6 +19,7 @@ struct VisualControls:View {
     }
     var body:some View {
         VStack(spacing:8){
+            VisualAnimationControls(store:store)
             HStack{
                 Picker("Crop",selection:Binding(get:{aspect},set:{value in setAspect(value)})){
                     ForEach(CropAspect.allCases,id:\.self){Text($0.rawValue).tag($0)}
@@ -44,7 +45,7 @@ struct VisualControls:View {
                     HStack{
                         Button{store.editSelected{clip in var v=clip.visual ?? .init();v.flipHorizontal.toggle();clip.visual=v}}label:{Image(systemName:"arrow.left.and.right").frame(width:24,height:24)}.help("Flip horizontal").accessibilityLabel("Flip horizontal")
                         Button{store.editSelected{clip in var v=clip.visual ?? .init();v.flipVertical.toggle();clip.visual=v}}label:{Image(systemName:"arrow.up.and.down").frame(width:24,height:24)}.help("Flip vertical").accessibilityLabel("Flip vertical")
-                        Spacer();Button("Reset"){aspect = .free;store.editSelected{$0.visual=nil}}
+                        Spacer();Button("Reset"){aspect = .free;store.editSelected{$0.visual=nil;$0.visualAnimation=nil}}
                     }
                     HStack{field("Crop L",\.cropLeft);field("R",\.cropRight)}
                     HStack{field("Crop T",\.cropTop);field("B",\.cropBottom)}
@@ -73,7 +74,7 @@ struct VisualControls:View {
     }
     private func place(_ mode:CropFitMode){
         guard let source else{return}
-        do{let updated=try CropGeometry.placing(visual,source:source,canvas:canvas,mode:mode);store.editSelected{$0.visual=updated}}
+        do{let updated=try CropGeometry.placing(visual,source:source,canvas:canvas,mode:mode);store.setSelectedVisualTransform(updated)}
         catch{store.error=error.localizedDescription}
     }
     private func loadDimensions()async {
@@ -105,7 +106,11 @@ struct VisualControls:View {
         try Task.checkCancellation();guard size.isValid else{throw CropGeometryError.dimensions};return size
     }
     func field(_ label:String,_ key:WritableKeyPath<VisualTransform,Double>)->some View {
-        HStack{Text(label);TextField(label,value:Binding(get:{visual[keyPath:key]},set:{value in store.editSelected{clip in var visual=clip.visual ?? .init();visual[keyPath:key]=value;clip.visual=visual}}),format:.number.precision(.fractionLength(2))).textFieldStyle(.roundedBorder).accessibilityLabel(label)}
+        HStack{Text(label);TextField(label,value:Binding(get:{visual[keyPath:key]},set:{value in
+            if [\VisualTransform.x,\VisualTransform.y,\VisualTransform.scaleX,\VisualTransform.scaleY].contains(key){
+                var updated=visual;updated[keyPath:key]=value;store.setSelectedVisualTransform(updated)
+            }else{store.editSelected{clip in var visual=clip.visual ?? .init();visual[keyPath:key]=value;clip.visual=visual}}
+        }),format:.number.precision(.fractionLength(2))).textFieldStyle(.roundedBorder).accessibilityLabel(label)}
     }
 }
 struct TitleControls:View {

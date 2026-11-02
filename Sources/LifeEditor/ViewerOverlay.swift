@@ -19,16 +19,16 @@ struct ViewerOverlay:View {
                     else {store.selection=active.first?.clip.id}
                 }
                 if !store.samplingColor,store.drawingMode==0,let clip=store.selectedClip,store.document.sequence.tracks.first(where:{$0.clips.contains(where:{$0.id==clip.id})})?.kind != .audio,clip.start.seconds<=store.playhead,store.playhead<clip.end.seconds {
-                    let visual=clip.visual ?? VisualTransform()
+                    let visual=store.selectedEvaluatedVisual
                     let isTitle=clip.title != nil
-                    let position=CGPoint(x:origin.x+canvas.width*(visual.x+(isTitle ? (clip.title?.style?.x ?? 0.5)-0.5:0)),y:origin.y+canvas.height*(visual.y+(isTitle ? (clip.title?.style?.y ?? 0.82)-0.5:0)))
+                    let position=ViewerTransformGeometry.center(title:clip.title,visual:visual,canvas:canvas,origin:origin)
                     let box=CGSize(width:canvas.width*(isTitle ? 0.6:1)*visual.scaleX,height:canvas.height*(isTitle ? 0.16:1)*visual.scaleY)
                     Rectangle().stroke(.white.opacity(0.7),style:StrokeStyle(lineWidth:1,dash:[4,3])).frame(width:box.width,height:box.height).position(position)
                         .contentShape(Rectangle())
                         .gesture(DragGesture().onChanged{value in
-                            if original==nil {original=visual;store.beginGesture()}
+                            if original==nil {store.stopPlayback();original=visual;store.beginGesture()}
                             guard let baseline=original else{return}
-                            store.editSelected {clip in var updated=baseline;updated.x+=value.translation.width/canvas.width;updated.y+=value.translation.height/canvas.height;clip.visual=updated}
+                            var updated=baseline;updated.x+=value.translation.width/canvas.width;updated.y+=value.translation.height/canvas.height;store.setSelectedVisualTransform(updated)
                         }.onEnded{_ in original=nil;store.endGesture()})
                         .onTapGesture(count:2){if isTitle{editingText=true;store.panel = .title}}
                         .accessibilityLabel("Selected object. Position and size are also available in Clip controls.")
@@ -36,10 +36,10 @@ struct ViewerOverlay:View {
                         Rectangle().fill(.white).frame(width:8,height:8)
                             .position(x:position.x+(index%2==0 ? -box.width/2:box.width/2),y:position.y+(index<2 ? -box.height/2:box.height/2))
                             .gesture(DragGesture().onChanged{value in
-                                if original==nil{original=visual;store.beginGesture()}
+                                if original==nil{store.stopPlayback();original=visual;store.beginGesture()}
                                 guard let baseline=original else{return}
                                 let amount=1+(value.translation.width*(index%2==0 ? -1:1))/max(1,box.width)
-                                store.editSelected{clip in var updated=baseline;updated.scaleX=max(0.01,min(10,baseline.scaleX*amount));updated.scaleY=max(0.01,min(10,baseline.scaleY*amount));clip.visual=updated}
+                                var updated=baseline;updated.scaleX=max(0.01,min(10,baseline.scaleX*amount));updated.scaleY=max(0.01,min(10,baseline.scaleY*amount));store.setSelectedVisualTransform(updated)
                             }.onEnded{_ in original=nil;store.endGesture()})
                             .accessibilityHidden(true)
                     }
@@ -57,7 +57,7 @@ struct ViewerOverlay:View {
                         if stroke.count<10000,stroke.last.map({hypot($0.x-point.x,$0.y-point.y)>0.001}) ?? true {stroke.append(point)}
                     }.onEnded{_ in store.commitDrawing(stroke);stroke=[]})
                     let visual:VisualTransform = {
-                        if let clip=store.selectedClip,store.selectedDrawing != nil,clip.start.seconds<=store.playhead,store.playhead<clip.end.seconds{return clip.visual ?? .init()}
+                        if let clip=store.selectedClip,store.selectedDrawing != nil,clip.start.seconds<=store.playhead,store.playhead<clip.end.seconds{return store.selectedEvaluatedVisual}
                         return .init()
                     }()
                     let width=store.drawingWidth*(store.drawingMode==3 ? 2:1)
@@ -82,5 +82,14 @@ struct ViewerOverlay:View {
                 }
             }
         }.onExitCommand{if store.placementProposal != nil{store.cancelPlacement()}else{store.cancelColorSampling()}}.allowsHitTesting(store.panel != .multicam || store.samplingColor)
+    }
+}
+
+/// Title anchors move with the scaled/flipped/rotated picture, just as in the
+/// compositor. Viewer handles follow that same anchor during reframing.
+enum ViewerTransformGeometry {
+    static func center(title:TitleContent?,visual:VisualTransform,canvas:CGSize,origin:CGPoint)->CGPoint {
+        let point=CGPoint(x:canvas.width*(title?.style?.x ?? 0.5),y:canvas.height*(title == nil ? 0.5:(title?.style?.y ?? 0.82)))
+        return point.applying(DrawingPreviewGeometry.transform(visual,canvas:canvas,origin:origin))
     }
 }
