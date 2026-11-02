@@ -103,7 +103,13 @@ final class EditorStore: ObservableObject {
     @Published var samplingColor=false
     private var colorSampleAction:((RGBAColor)->Void)?
     private var videoOutput:AVPlayerItemVideoOutput?
-    @Published var safeAreas = false
+    @Published var safeGuideMode = SafeGuidePreferences.initialMode(in:.standard) {
+        didSet {SafeGuidePreferences.remember(safeGuideMode,in:.standard)}
+    }
+    var safeAreas:Bool {
+        get {safeGuideMode != .off}
+        set {safeGuideMode = newValue ? SafeGuidePreferences.preferredMode(in:.standard):.off}
+    }
     @Published var focused = false
     @Published var autosaveError:String?
     @Published var dirty = false

@@ -18,6 +18,7 @@ struct WorkspaceView: View {
     @State private var shapePicker=false
     @State private var stickerPicker=false
     @State private var audioPage=0
+    @State private var safeGuidePicker=false
     var body: some View {
         VStack(spacing:0) {
             toolbar
@@ -50,7 +51,6 @@ struct WorkspaceView: View {
         .tint(accent)
         .sheet(isPresented:$store.showExport){ExportSheet(store:store)}
         .alert("Life Editor",isPresented:Binding(get:{store.error != nil},set:{if !$0 {store.error=nil}})) { Button("OK") { store.error = nil } } message: { Text(store.error ?? "") }
-        .onAppear { store.safeAreas = UserDefaults.standard.bool(forKey:"showSafeAreaDefault") }
         .onExitCommand{if store.placementProposal != nil{store.cancelPlacement()}else{store.cancelColorSampling()}}
     }
     private var toolbar: some View {
@@ -100,7 +100,7 @@ struct WorkspaceView: View {
                             .buttonStyle(.plain).foregroundStyle(.secondary).help("Import · ⌘I").accessibilityLabel("Import media")
                     }
                     if store.safeAreas {
-                        Rectangle().stroke(.white.opacity(0.35),style:StrokeStyle(lineWidth:1,dash:[5,5])).padding(32).allowsHitTesting(false)
+                        SocialSafeGuides(mode:store.safeGuideMode,composition:CGSize(width:store.document.sequence.settings.width,height:store.document.sequence.settings.height))
                     }
                 }
                 if store.panel == .multicam && store.multicamGroup != nil {
@@ -117,7 +117,9 @@ struct WorkspaceView: View {
                 icon(store.playing ? "pause.fill" : "play.fill", "Play / Pause · Space", action:store.togglePlayback)
                 icon("forward.frame", "Next frame · →") { store.step(1) }
                 Spacer()
-                icon("viewfinder", "Safe areas", selected:store.safeAreas) { store.safeAreas.toggle() }
+                icon("viewfinder", "Safe guides · preview only", selected:store.safeAreas) { safeGuidePicker.toggle() }
+                    .accessibilityValue(store.safeGuideMode.title)
+                    .popover(isPresented:$safeGuidePicker) {SafeGuidePicker(mode:$store.safeGuideMode){safeGuidePicker=false}}
                 icon("arrow.up.left.and.arrow.down.right", "Viewer focus · ⇧⌘F", selected:store.focused) { store.focused.toggle() }
             }.padding(.horizontal,18).frame(height:42)
         }
