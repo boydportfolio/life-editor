@@ -118,6 +118,7 @@ struct WorkspaceView: View {
                 icon(store.playing ? "pause.fill" : "play.fill", "Play / Pause · Space", action:store.togglePlayback)
                 icon("forward.frame", "Next frame · →") { store.step(1) }
                 Spacer()
+                CanvasPresetControls(store:store)
                 icon("viewfinder", "Safe guides · preview only", selected:store.safeAreas) { safeGuidePicker.toggle() }
                     .accessibilityValue(store.safeGuideMode.title)
                     .popover(isPresented:$safeGuidePicker) {SafeGuidePicker(mode:$store.safeGuideMode){safeGuidePicker=false}}

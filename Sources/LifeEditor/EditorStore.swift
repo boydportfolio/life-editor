@@ -296,11 +296,7 @@ final class EditorStore: ObservableObject {
                     let firstVideo = !next.assets.contains { $0.kind == .video }
                     next.assets.append(probe.asset)
                     if probe.hasVideo && firstVideo {
-                        next.sequence.settings.width = probe.width; next.sequence.settings.height = probe.height
-                        if probe.frameRate > 0 {
-                            let known: [(Double, FrameRate)] = [(29.97,.init(numerator:30000,denominator:1001)),(59.94,.init(numerator:60000,denominator:1001)),(23.976,.init(numerator:24000,denominator:1001))]
-                            next.sequence.settings.frameRate = known.first(where: { abs($0.0-probe.frameRate)<0.02 })?.1 ?? .init(numerator: Int64(probe.frameRate.rounded()))
-                        }
+                        next.sequence.settings=Self.firstVideoSettings(width:probe.width,height:probe.height,rate:probe.frameRate,current:next.sequence.settings)
                     }
                     let clip = Clip(name: url.deletingPathExtension().lastPathComponent, assetID: probe.asset.id, start: time(playhead, audio: !probe.hasVideo), duration: probe.asset.duration)
                     next.sequence.tracks.append(Track(name: clip.name, kind: probe.asset.kind == .image ? .image : probe.hasVideo ? .video : .audio, clips: [clip]))

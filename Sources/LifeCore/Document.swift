@@ -102,7 +102,9 @@ public struct MulticamGroup: Identifiable, Codable, Equatable, Sendable {
 }
 public struct ProjectSettings: Codable, Equatable, Sendable {
     public var width: Int; public var height: Int; public var frameRate: FrameRate; public var audioSampleRate: Int
-    public init(width: Int = 1920, height: Int = 1080, frameRate: FrameRate = .init(), audioSampleRate: Int = 48000) { self.width=width; self.height=height; self.frameRate=frameRate; self.audioSampleRate=audioSampleRate }
+    /// Nil in legacy projects: the first video supplies the initial canvas.
+    public var canvasIsExplicit: Bool?
+    public init(width: Int = 1920, height: Int = 1080, frameRate: FrameRate = .init(), audioSampleRate: Int = 48000, canvasIsExplicit: Bool? = nil) { self.width=width; self.height=height; self.frameRate=frameRate; self.audioSampleRate=audioSampleRate; self.canvasIsExplicit=canvasIsExplicit }
 }
 public struct MusicalGrid: Codable, Equatable, Sendable {
     public var bpm: Double; public var offset: RationalTime; public var beatsPerBar: Int; public var subdivision: Int
