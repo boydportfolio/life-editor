@@ -578,8 +578,7 @@ final class EditorStore: ObservableObject {
         }
     }
     func addManualCaption(){
-        var next=document;let cue=CaptionCue(start:time(playhead),duration:.init(value:2,timescale:1),text:"Caption")
-        let clip=cue.clip;next.sequence.tracks.append(Track(name:"Captions",kind:.caption,clips:[clip]));replace(next);selection=clip.id;panel = .title
+        insertManualCaption(at:time(playhead))
     }
     func transcribeSelected(){
         guard !transcribing,let clip=selectedClip,let asset=document.assets.first(where:{$0.id==clip.assetID}) else{return}

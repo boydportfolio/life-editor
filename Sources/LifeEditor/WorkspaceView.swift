@@ -59,6 +59,7 @@ struct WorkspaceView: View {
             Divider().frame(height:18)
             icon("rectangle.stack", "Media", selected:store.panel == .media) { toggle(.media) }
             icon("textformat", "Title", action:store.addTitle)
+            CaptionActions(store:store)
             icon("face.smiling", "Stickers"){stickerPicker.toggle()}
                 .popover(isPresented:$stickerPicker){StickerPicker(store:store){stickerPicker=false}}
                 .disabled(store.placementProposal != nil)

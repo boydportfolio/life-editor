@@ -33,6 +33,10 @@ func styledSocialColorDrawingCaptionsCollectReopenAndExport()async throws {
     color.setParameter("life.adjust.hsl","yellowSaturation",-0.2)
     store.selection=cues[0].id;store.applyCaptionPreset(.pill)
     store.matchCaptionTrackStyle()
+    store.addFollowingCaption()
+    #expect(store.selectedClip?.start == cues[0].start+cues[0].duration)
+    #expect(store.selectedClip?.end == cues[1].start)
+    store.editSelected{$0.title?.text="Ready?"}
     let styled=store.document;store.undo();store.redo();#expect(store.document==styled)
     store.selection=nil;store.playheadTime = .zero;store.drawingMode=2
     store.drawingColor = .init(red:1,green:0.2,blue:0.6,alpha:0.8);store.drawingWidth=0.025
@@ -60,8 +64,8 @@ func styledSocialColorDrawingCaptionsCollectReopenAndExport()async throws {
             context.draw(image,in:CGRect(x:0,y:0,width:width,height:height))
         };return bytes
     }
-    for tick in [2,7] {
-        let time=CMTime(value:Int64(tick),timescale:4)
+    for tick in [4,11,14] {
+        let time=CMTime(value:Int64(tick),timescale:8)
         let live=pixels(try await preview.image(at:time).image),offline=pixels(try await generator.image(at:time).image)
         let error=zip(live,offline).reduce(0.0){$0+Double(abs(Int($1.0)-Int($1.1)))}/Double(live.count)
         #expect(error<5)

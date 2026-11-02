@@ -7,6 +7,26 @@ struct CaptionStyleControls:View {
     @State private var choosing=false
     @State private var thumbnails:[CaptionPreset:CGImage]=[:]
     var body:some View {
+        VStack(spacing:6) {
+            HStack {
+                cueButton("chevron.left","Previous caption",disabled:store.adjacentCaption(-1)==nil){store.selectAdjacentCaption(-1)}
+                Spacer()
+                if let index=store.orderedCaptionClips.firstIndex(where:{$0.id==store.selection}) {
+                    Text("\(index+1) / \(store.orderedCaptionClips.count)").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                        .accessibilityLabel("Caption \(index+1) of \(store.orderedCaptionClips.count)")
+                }
+                Spacer()
+                cueButton("chevron.right","Next caption",disabled:store.adjacentCaption(1)==nil){store.selectAdjacentCaption(1)}
+                cueButton("plus.bubble","Add caption after this cue",disabled:store.selectedCaptionTrack?.isLocked ?? true){store.addFollowingCaption()}
+            }.disabled(store.placementProposal != nil)
+            styles
+        }
+    }
+    private func cueButton(_ symbol:String,_ label:String,disabled:Bool,action:@escaping ()->Void)->some View {
+        Button(action:action){Image(systemName:symbol).frame(width:30,height:30)}
+            .buttonStyle(.plain).help(label).accessibilityLabel(label).disabled(disabled)
+    }
+    private var styles:some View {
         HStack {
             Button{choosing=true}label:{Image(systemName:"captions.bubble").frame(width:30,height:30)}
                 .buttonStyle(.plain).help("Caption styles").accessibilityLabel("Caption styles")
