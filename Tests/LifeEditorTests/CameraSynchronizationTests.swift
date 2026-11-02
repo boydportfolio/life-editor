@@ -70,6 +70,8 @@ import LifeCore
         #expect(host.fittingSize.width<=268);#expect(host.fittingSize.height<=360)
         let bitmap=try #require(host.bitmapImageRepForCachingDisplay(in:host.bounds));host.cacheDisplay(in:host.bounds,to:bitmap)
         let png=try #require(bitmap.representation(using:.png,properties:[:]))
-        try png.write(to:URL(fileURLWithPath:"/tmp/life-editor-ui-checks/timecode-sync.png"))
+        let directory=URL(fileURLWithPath:ProcessInfo.processInfo.environment["LIFE_UI_ARTIFACTS"] ?? "/tmp/life-editor-ui-checks",isDirectory:true)
+        try FileManager.default.createDirectory(at:directory,withIntermediateDirectories:true)
+        try png.write(to:directory.appendingPathComponent("timecode-sync.png"))
     }
 }
