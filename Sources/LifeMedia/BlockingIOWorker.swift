@@ -6,6 +6,14 @@ import Foundation
 final class BlockingIOWorker:Sendable {
     private let queue:DispatchQueue
     init(label:String){queue=DispatchQueue(label:label,qos:.userInitiated)}
+    /// Cleanup is enqueued without consulting Task cancellation. A caller may
+    /// release native resources only after this asynchronous fence completes.
+    func fence()async {
+        await withCheckedContinuation{(continuation:CheckedContinuation<Void,Never>) in
+            queue.async{continuation.resume()}
+        }
+    }
+    func enqueue(_ operation:@escaping @Sendable ()->Void){queue.async(execute:operation)}
     func run<Value:Sendable>(_ operation:@escaping @Sendable ()throws->Value)async throws->Value{
         try Task.checkCancellation()
         let value:Value=try await withCheckedThrowingContinuation{continuation in
@@ -15,6 +23,39 @@ final class BlockingIOWorker:Sendable {
             }
         }
         try Task.checkCancellation();return value
+    }
+}
+
+/// One native reader owns one queue for startup, every output pull and native
+/// cancellation. Setting the flag is immediate; cancel itself waits behind any
+/// in-flight native operation. No synchronous wait touches the main actor.
+final class NativeReaderLifecycle:@unchecked Sendable {
+    private let worker:BlockingIOWorker
+    private let lock=NSLock()
+    private var cancelled=false
+    private let nativeCancel:@Sendable ()->Void
+    init(label:String,nativeCancel:@escaping @Sendable ()->Void){
+        worker=BlockingIOWorker(label:label);self.nativeCancel=nativeCancel
+    }
+    func checkCancellation()throws{if lock.withLock({cancelled}){throw CancellationError()}}
+    func perform<Value:Sendable>(_ operation:@escaping @Sendable ()throws->Value)async throws->Value {
+        try checkCancellation()
+        let value=try await worker.run{[self] in
+            try checkCancellation()
+            return try operation()
+        }
+        try checkCancellation()
+        return value
+    }
+    func cancel(){
+        lock.withLock{cancelled=true}
+        // Do not read native status on the requesting thread. In particular,
+        // startup may still be running and must finish before native cancel.
+        worker.enqueue{[self] in nativeCancel()}
+    }
+    func cancelAndWait()async {
+        cancel()
+        await worker.fence()
     }
 }
 

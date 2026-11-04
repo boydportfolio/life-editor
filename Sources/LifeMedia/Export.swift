@@ -55,23 +55,25 @@ struct ExportRenderPlan: @unchecked Sendable {
 private final class ExportIO: @unchecked Sendable {
     let reader: AVAssetReader
     let writer: AVAssetWriter
-    private let lock=NSLock()
-    private var cancelled=false
-    private let cancellationQueue=DispatchQueue(label:"org.lifeeditor.export.cancel",qos:.userInitiated)
-    init(reader: AVAssetReader, writer: AVAssetWriter) { self.reader = reader; self.writer = writer }
-    func checkCancellation()throws{if lock.withLock({cancelled}){throw CancellationError()}}
-    func cancelAndWait()async{
-        cancel()
-        await withCheckedContinuation{(continuation:CheckedContinuation<Void,Never>) in cancellationQueue.async{continuation.resume()}}
-    }
-    func cancel() {
-        lock.withLock{cancelled=true}
-        // A second pass after startup/unwind also covers cancellation before
-        // native objects entered reading/writing state. Unknown states are untouched.
-        cancellationQueue.async{[self] in
+    let diagnostics:NativeReaderDiagnostics
+    let readerLifecycle:NativeReaderLifecycle
+    init(reader: AVAssetReader, writer: AVAssetWriter,diagnostics:NativeReaderDiagnostics) {
+        self.reader = reader;self.writer = writer;self.diagnostics=diagnostics
+        readerLifecycle=NativeReaderLifecycle(label:"org.lifeeditor.export.reader"){[reader,writer,diagnostics] in
+            diagnostics.record("cancelbegin",readerStatus:diagnostics.status(reader.status.rawValue))
             if reader.status == .reading{reader.cancelReading()}
             if writer.status == .writing{writer.cancelWriting()}
+            diagnostics.record("cancelend",readerStatus:diagnostics.status(reader.status.rawValue))
         }
+    }
+    func checkCancellation()throws{try readerLifecycle.checkCancellation()}
+    func cancelAndWait()async{
+        diagnostics.record("cancelrequested")
+        await readerLifecycle.cancelAndWait()
+    }
+    func cancel() {
+        diagnostics.record("cancelrequested")
+        readerLifecycle.cancel()
     }
 }
 /// CMSampleBuffer is immutable after the reader hands it to this stream.
@@ -79,6 +81,7 @@ private struct ExportSample:@unchecked Sendable{let buffer:CMSampleBuffer?}
 private struct ExportStream: @unchecked Sendable {
     let output: AVAssetReaderOutput
     let input: AVAssetWriterInput
+    let kind:String
 }
 private final class ExportProgress: @unchecked Sendable {
     let callback: (@MainActor @Sendable (Double) -> Void)?
@@ -111,11 +114,22 @@ enum ReaderWriterExport {
     static func run(_ plan: ExportRenderPlan, to url: URL, options: ExportOptions,
                     progress: (@MainActor @Sendable (Double) -> Void)?) async throws {
         try await ExportAdmission.shared.acquire()
-        do{try await perform(plan,to:url,options:options,progress:progress);await ExportAdmission.shared.release()}
-        catch{await ExportAdmission.shared.release();throw error}
+        let diagnostics=NativeReaderDiagnostics(serialPulls:true)
+        defer{diagnostics.finish()}
+        diagnostics.record("exportadmitted")
+        do{
+            try await perform(plan,to:url,options:options,progress:progress,diagnostics:diagnostics)
+            diagnostics.record("exportfinish",succeeded:true)
+            diagnostics.finish()
+            await ExportAdmission.shared.release()
+        }catch{
+            diagnostics.record("exportfinish",succeeded:false)
+            diagnostics.finish()
+            await ExportAdmission.shared.release();throw error
+        }
     }
     private static func perform(_ plan:ExportRenderPlan,to url:URL,options:ExportOptions,
-                                progress:(@MainActor @Sendable (Double)->Void)?)async throws{
+                                progress:(@MainActor @Sendable (Double)->Void)?,diagnostics:NativeReaderDiagnostics)async throws{
         try Task.checkCancellation()
         let duration = try await plan.composition.load(.duration)
         let start = options.rangeStart?.cmTime ?? .zero
@@ -123,10 +137,11 @@ enum ReaderWriterExport {
         guard start.isNumeric, length.isNumeric, start >= .zero, length > .zero,
               CMTimeAdd(start, length) <= duration else { throw MediaError.invalidRange("Export range") }
         let range = CMTimeRange(start: start, duration: length)
+        diagnostics.record("readerconfigurebegin")
         let reader = try AVAssetReader(asset: plan.composition)
         reader.timeRange = range
         let writer = try AVAssetWriter(outputURL: url, fileType: options.format.fileType)
-        let io = ExportIO(reader: reader, writer: writer)
+        let io = ExportIO(reader: reader, writer: writer,diagnostics:diagnostics)
         let control=BlockingIOWorker(label:"org.lifeeditor.export.control")
         var streams: [ExportStream] = []
         if options.format.hasVideo {
@@ -150,7 +165,7 @@ enum ReaderWriterExport {
             let input = AVAssetWriterInput(mediaType: .video, outputSettings: settings)
             input.expectsMediaDataInRealTime = false
             guard reader.canAdd(output), writer.canAdd(input) else { throw MediaError.exportUnavailable }
-            reader.add(output); writer.add(input); streams.append(.init(output: output, input: input))
+            reader.add(output); writer.add(input); streams.append(.init(output: output, input: input,kind:"video"))
         }
         let audioTracks = try await plan.composition.loadTracks(withMediaType: .audio)
         if !audioTracks.isEmpty {
@@ -172,26 +187,38 @@ enum ReaderWriterExport {
             let input = AVAssetWriterInput(mediaType: .audio, outputSettings: settings)
             input.expectsMediaDataInRealTime = false
             guard reader.canAdd(output), writer.canAdd(input) else { throw MediaError.exportUnavailable }
-            reader.add(output); writer.add(input); streams.append(.init(output: output, input: input))
+            reader.add(output); writer.add(input); streams.append(.init(output: output, input: input,kind:"audio"))
         } else if !options.format.hasVideo { throw MediaError.unsupported("Audio-only export needs an audible recording") }
+        diagnostics.record("readerconfigureend",readerStatus:diagnostics.status(reader.status.rawValue))
         let report = ExportProgress(range: range, streamCount: streams.count, callback: progress)
         try await withTaskCancellationHandler {
             do {
-            try await control.run{
-                try io.checkCancellation()
+            try await io.readerLifecycle.perform{
                 guard io.writer.startWriting() else{throw io.writer.error ?? MediaError.exportUnavailable}
                 io.writer.startSession(atSourceTime:start)
-                guard io.reader.startReading() else{io.writer.cancelWriting();throw io.reader.error ?? MediaError.exportUnavailable}
+                diagnostics.record("readerstartbegin",readerStatus:diagnostics.status(io.reader.status.rawValue))
+                let started=io.reader.startReading()
+                diagnostics.record("readerstartend",readerStatus:diagnostics.status(io.reader.status.rawValue),succeeded:started)
+                guard started else{io.writer.cancelWriting();throw io.reader.error ?? MediaError.exportUnavailable}
             }
                 try await withThrowingTaskGroup(of: Void.self) { group in
                     for (streamIndex, stream) in streams.enumerated() {
                         group.addTask {
                             let worker=BlockingIOWorker(label:"org.lifeeditor.export.stream.\(streamIndex)")
+                            var sampleOrdinal=0
                             while true {
                                 try Task.checkCancellation()
                                 let ready=try await worker.run{try io.checkCancellation();guard io.writer.status == .writing else{throw io.writer.error ?? MediaError.exportUnavailable};return stream.input.isReadyForMoreMediaData}
                                 if !ready{try await Task.sleep(for:.milliseconds(2));continue}
-                                let sample=try await worker.run{try io.checkCancellation();return ExportSample(buffer:stream.output.copyNextSampleBuffer())}
+                                let ordinal=sampleOrdinal
+                                let sample=try await io.readerLifecycle.perform{
+                                    try io.checkCancellation()
+                                    diagnostics.record("samplebegin",streamKind:stream.kind,streamIndex:streamIndex,sampleOrdinal:ordinal,readerStatus:diagnostics.status(io.reader.status.rawValue))
+                                    let sample=ExportSample(buffer:stream.output.copyNextSampleBuffer())
+                                    diagnostics.record("sampleend",streamKind:stream.kind,streamIndex:streamIndex,sampleOrdinal:ordinal,readerStatus:diagnostics.status(io.reader.status.rawValue),hasSample:sample.buffer != nil)
+                                    return sample
+                                }
+                                sampleOrdinal+=1
                                 guard let buffer=sample.buffer else{break}
                                 try await worker.run{try io.checkCancellation();guard let buffer=sample.buffer,stream.input.append(buffer) else{throw io.writer.error ?? MediaError.exportUnavailable}}
                                 await report.report(CMSampleBufferGetPresentationTimeStamp(buffer),stream:streamIndex)
@@ -202,12 +229,14 @@ enum ReaderWriterExport {
                     do{while let _ = try await group.next(){}}catch{io.cancel();group.cancelAll();throw error}
                 }
                 try Task.checkCancellation()
-                try await control.run{
-                    try io.checkCancellation()
+                try await io.readerLifecycle.perform{
+                    diagnostics.record("readerfinish",readerStatus:diagnostics.status(io.reader.status.rawValue))
                     guard io.reader.status == .completed else{throw io.reader.error ?? MediaError.exportUnavailable}
-                    io.writer.endSession(atSourceTime:CMTimeRangeGetEnd(range))
                 }
+                try await control.run{try io.checkCancellation();io.writer.endSession(atSourceTime:CMTimeRangeGetEnd(range))}
+                diagnostics.record("finishbegin")
                 await writer.finishWriting()
+                if diagnostics.isTracing{diagnostics.record("finishend",succeeded:writer.status == .completed)}
                 try Task.checkCancellation()
                 guard writer.status == .completed else { throw writer.error ?? MediaError.exportUnavailable }
             } catch { await io.cancelAndWait();throw error }
