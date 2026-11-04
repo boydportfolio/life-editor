@@ -1,6 +1,6 @@
 # Progress toward 1.0
 
-Updated: 2026-11-02. Overall planning estimate: **about 65%** of the full owner
+Updated: 2026-11-03. Overall planning estimate: **about 65%** of the full owner
 scope, with a rough **60–70% range**. This is an engineering estimate of integrated
 behavior and remaining work, not a percentage of checked boxes, lines of code or
 passing tests. It is not a release-readiness score.
@@ -46,7 +46,7 @@ Next Phase 2 priorities: explicit audio looping with adjustable crossfades, reve
 and speed ramps, remaining musical-grid controls/metronome, and broader workflow
 and performance coverage. Earlier incomplete requirements remain in the register.
 
-Latest local verification: 303 tests across 15 suites in the full native/helper
+Latest local verification: 307 tests across 15 suites in the full native/helper
 run and the optimized ad-hoc app build pass. Hosted CI is checked separately after
 publishing. See [verification](VERIFICATION.md) for dates and practical limits.
 
@@ -84,3 +84,10 @@ Stable-source clean verification on November 2 passes 303 tests across 15 suites
 including native media/helpers. Earlier combined test processes hit native
 AVFoundation crashes; isolated fixtures and the clean complete run pass, with the
 unconfirmed cause retained in the checkpoint notes. Manual release gates remain open.
+
+
+November 3 reliability work pauses new features. The
+[reader investigation](NATIVE-READER-INVESTIGATION.md) reproduces cancellation
+lifecycle overlaps and fixes them in export and standalone readers. The original
+reproducer passes 20 consecutive runs, and full native/helper checks pass 307
+tests. Native navigation must be verified before resuming feature work.

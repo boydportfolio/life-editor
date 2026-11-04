@@ -3,7 +3,16 @@
 Host: macOS 15.6, Apple M4, 16 GB; Swift 6.2.3 CLT compiler/SDK.
 This is not an M1 benchmark. No usability or performance target is claimed met.
 
-## Latest run: creative controls checkpoint, 2026-10-28
+## Latest automated run: native reader cancellation, 2026-11-03
+
+Full native/helper verification passes: **307 tests across 15 suites in 54.666
+seconds**. The original crash reproduction passes 20 consecutive runs after the
+lifecycle fix, covering 468 readers and 110,025 matched sample calls without
+reader-operation/cancellation overlap. A fresh optimized build and helper/signature
+checks pass. The [investigation](NATIVE-READER-INVESTIGATION.md) records the
+reproduction, fix, regression evidence and separate native-navigation status.
+
+## Previous run: creative controls checkpoint, 2026-10-28
 
 Full native/helper verification passes: **277 tests across 15 suites in
 51.220 seconds**, with sequential outer execution and pinned helpers. The optimized
@@ -382,3 +391,20 @@ keyboard/VoiceOver, installation/media workflow and M1/usability gates stay open
 A separate clean optimized app build passes, including strict ad-hoc signature
 verification and bundled LGPL helper/license/inventory checks. No release or tag
 is produced by this validation.
+
+
+## November 3 reader lifecycle
+
+The [reader investigation](NATIVE-READER-INVESTIGATION.md) reproduced the native
+crashes during overlapping cancellation and startup/sample work, including with
+only one admitted export. Serializing sample pulls alone still crashed. The shared
+reader lifecycle now serializes startup, pulls and native cancellation, rejects
+cancelled work immediately and awaits an unconditional asynchronous cleanup fence.
+Both export and standalone reader wrappers use it.
+
+The original reproduction passes 20 consecutive runs after the fix: 468 readers,
+110,025 matched sample calls and no lifecycle overlaps. Full local native/helper
+validation passes 307 tests across 15 suites in 54.666 seconds. The reusable
+stress harness passes an additional native round. Actual running-app navigation
+remains separately tracked in the investigation; the full manual release gate
+has not been closed by these automated results.

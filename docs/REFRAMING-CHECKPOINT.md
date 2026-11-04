@@ -84,3 +84,10 @@ LIFE_BUILD_DIRECTORY=/tmp/life-framing-final-app scripts/build-app.sh
 The clean optimized application build also passes strict ad-hoc signature and
 pinned LGPL helper/inventory checks. These are local M4 measurements; they do not
 establish signing/notarization, M1 performance or manual usability acceptance.
+
+
+November 3 follow-up: the [reader investigation](NATIVE-READER-INVESTIGATION.md)
+reproduces the previous failures during overlapping native cancellation/startup
+or sample reads. The shared lifecycle fix passes the original repeated workload
+and the full 307-test native/helper suite. Running-app navigation is tracked
+separately and remains a prerequisite to further feature work.

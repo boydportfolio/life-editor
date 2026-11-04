@@ -209,3 +209,10 @@ November 2 clean native/helper validation passes 303 tests across 15 suites.
 Two earlier processes crashed inside native AVFoundation reader calls; isolated
 fixtures and the stable-source clean suite pass. The crash cause is unconfirmed
 and remains in release QA notes rather than being represented as a fixed defect.
+
+
+The November 3 [reader investigation](NATIVE-READER-INVESTIGATION.md) reproduces the
+previous crashes as overlapping reader cancellation/startup/sample operations.
+A shared serial lifecycle now covers export and standalone readers. Twenty
+reproducer runs and the full 307-test native/helper suite pass; actual native
+navigation and release acceptance remain separately tracked.
