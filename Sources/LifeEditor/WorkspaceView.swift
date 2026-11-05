@@ -74,7 +74,7 @@ struct WorkspaceView: View {
             icon("square.grid.2x2", "Multicam", selected:store.panel == .multicam) {toggle(.multicam)}
             icon("rectangle.bottomthird.inset.filled", timelineCollapsed ? "Show timeline":"Hide timeline", selected:!timelineCollapsed) { timelineCollapsed.toggle() }
             Spacer()
-            Text(store.document.name + (store.dirty ? " •" : "")).font(.system(size:12,weight:.medium)).foregroundStyle(.secondary).lineLimit(1)
+            Text(store.projectDisplayName + (store.dirty ? " •" : "")).font(.system(size:12,weight:.medium)).foregroundStyle(.secondary).lineLimit(1)
             Spacer()
             if let failure=store.autosaveError{icon("externaldrive.badge.exclamationmark","Autosave failed"){store.error=failure}}
             if store.busy {ProgressView(value:store.importProgress).frame(width:50).accessibilityLabel("Preparing media");icon("xmark","Cancel import"){store.cancelImport()}}

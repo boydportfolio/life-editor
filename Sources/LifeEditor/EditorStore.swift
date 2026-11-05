@@ -156,7 +156,8 @@ final class EditorStore: ObservableObject {
     let player = AVPlayer()
     let media = MediaPipeline()
     private var editor = ProjectEditor()
-    private var projectURL: URL?
+    @Published private var projectURL: URL?
+    var projectDisplayName: String { projectURL?.deletingPathExtension().lastPathComponent ?? document.name }
     private var refreshTask: Task<Void, Never>?
     private var exportTask: Task<Void, Never>?
     private var observer: Any?
@@ -557,7 +558,7 @@ final class EditorStore: ObservableObject {
     @discardableResult func save(as saveAs: Bool = false) -> Bool {
         var destination = saveAs ? nil : projectURL
         if destination == nil {
-            let picker = NSSavePanel(); picker.nameFieldStringValue = document.name + ".lifeedit"; picker.canCreateDirectories = true
+            let picker = NSSavePanel(); picker.nameFieldStringValue = projectDisplayName + ".lifeedit"; picker.canCreateDirectories = true
             guard picker.runModal() == .OK else { return false }; destination = picker.url
         }
         guard var destination else { return false }
@@ -623,7 +624,7 @@ final class EditorStore: ObservableObject {
     }
     func cancelTranscription(){transcriptionTask?.cancel();transcription.cancel()}
     func collectMedia(){
-        let picker=NSSavePanel();picker.nameFieldStringValue=document.name+" Collected.lifeedit"
+        let picker=NSSavePanel();picker.nameFieldStringValue=projectDisplayName+" Collected.lifeedit"
         guard picker.runModal() == .OK,let url=picker.url else{return}
         do {try ProjectPackage.collect(document,to:url)}catch{self.error=Self.message(error)}
     }
@@ -646,7 +647,7 @@ final class EditorStore: ObservableObject {
     }
     func exportMovie(){showExport=true}
     func beginExport(options:ExportOptions) {
-        let picker = NSSavePanel(); picker.allowedContentTypes = [.init(filenameExtension:options.format.fileExtension) ?? .data]; picker.nameFieldStringValue = "\(document.name).\(options.format.fileExtension)"
+        let picker = NSSavePanel(); picker.allowedContentTypes = [.init(filenameExtension:options.format.fileExtension) ?? .data]; picker.nameFieldStringValue = "\(projectDisplayName).\(options.format.fileExtension)"
         guard picker.runModal() == .OK, let url = picker.url else { return }
         let snapshot = ProjectSnapshot(document: document); exportProgress=0;exporting = true
         exportTask = Task {
