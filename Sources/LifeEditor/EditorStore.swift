@@ -168,11 +168,16 @@ final class EditorStore: ObservableObject {
         player.automaticallyWaitsToMinimizeStalling=false
         observer = player.addPeriodicTimeObserver(forInterval: CMTime(value: 1, timescale: 30), queue: .main) { [weak self] time in
             Task { @MainActor in
-                guard let self else { return }
-                self.playheadTime = time.seconds.isFinite && time.timescale>0 ? RationalTime(value:time.value,timescale:Int64(time.timescale)):.zero
-                if self.playing && (self.playhead >= self.playbackDocument.sequence.duration.seconds || self.activeSwitchRange.map({self.playhead >= $0.end.seconds}) == true) { self.stopPlayback() }
+                self?.updatePlaybackClock(time)
             }
         }
+    }
+    /// Paused seeking and stepping own the exact rational clock. AVPlayer can
+    /// emit an old position while seeks settle or a rebuilt item is installed.
+    func updatePlaybackClock(_ time:CMTime){
+        guard playing else{return}
+        playheadTime = time.seconds.isFinite && time.timescale>0 ? RationalTime(value:time.value,timescale:Int64(time.timescale)):.zero
+        if playhead >= playbackDocument.sequence.duration.seconds || activeSwitchRange.map({playhead >= $0.end.seconds}) == true {stopPlayback()}
     }
     var selectedClip: Clip? { document.sequence.tracks.flatMap(\.clips).first { $0.id == selection } }
     var canUndo: Bool { placementProposal != nil || editor.canUndo }
