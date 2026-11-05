@@ -24,6 +24,7 @@ import LifeCore
     window.contentView=canvas;canvas.frame=NSRect(x:0,y:0,width:800,height:250)
     canvas.refreshAccessibility()
     let button=try #require((canvas.accessibilityChildren() as? [NSAccessibilityElement])?.first{$0.accessibilityLabel()=="Unsolo Empty music"})
+    #expect(button.isAccessibilityEnabled())
     #expect(button.accessibilityFrame().width>=30 && button.accessibilityFrame().height>=30)
     #expect(button.accessibilityPerformPress());#expect(!store.document.sequence.tracks[0].isSoloed)
     store.undo();#expect(store.document.sequence.tracks[0].isSoloed)

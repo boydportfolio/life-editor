@@ -93,6 +93,7 @@ private func writeFilmstripPNG(_ url:URL,red:CGFloat,blue:CGFloat)throws{
     let delete=try #require(NSEvent.keyEvent(with:.keyDown,location:.zero,modifierFlags:[],timestamp:0,windowNumber:window.windowNumber,context:nil,characters:"",charactersIgnoringModifiers:"",isARepeat:false,keyCode:51));canvas.keyDown(with:delete)
     #expect(store.document==original);#expect(store.placementProposal?.document==proposal.document)
     canvas.refreshAccessibility();let children=try #require(canvas.accessibilityChildren() as? [NSAccessibilityElement]);let clipButton=try #require(children.first{$0.accessibilityLabel()?.contains(inserted.name)==true})
+    #expect(!clipButton.isAccessibilityEnabled())
     #expect(!clipButton.accessibilityPerformPress());#expect(store.document==original)
     store.placementProposal=nil;#expect(canvas.tracks.flatMap(\.clips)==[clip]);window.contentView=nil
 }

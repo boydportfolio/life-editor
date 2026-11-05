@@ -68,7 +68,7 @@ struct TimelineSurface: NSViewRepresentable {
     private var sampleTasks:[String:Task<Void,Never>]=[:]
     private var accessibilityItems:[NSAccessibilityElement]=[]
     private struct AccessibilitySignature: Equatable {
-        var document: ProjectDocument; var selection: Set<UUID>; var frame: NSRect; var bounds: NSRect; var viewport: NSRect; var windowFrame: NSRect; var pixelsPerSecond: Double;var layoutRevision:Int;var automationSelection:Set<UUID>;var lane:AutomationLane;var decisions:Bool;var cutSelection:UUID?
+        var document: ProjectDocument; var selection: Set<UUID>; var frame: NSRect; var bounds: NSRect; var viewport: NSRect; var windowFrame: NSRect; var pixelsPerSecond: Double;var layoutRevision:Int;var automationSelection:Set<UUID>;var lane:AutomationLane;var decisions:Bool;var cutSelection:UUID?;var placementPreview:Bool
     }
     private var accessibilitySignature: AccessibilitySignature?
     private(set) var accessibilityRebuildCount=0
@@ -77,7 +77,7 @@ struct TimelineSurface: NSViewRepresentable {
     private func trackControlProperties(_ track:Track)->[String] {track.supportsAudio ? ["mute","hide","lock","solo"]:["mute","hide","lock"]}
     @objc func view(_ view:NSView,stringForToolTip tag:NSView.ToolTipTag,point:NSPoint,userData:UnsafeMutableRawPointer?)->String {trackTooltips[tag] ?? ""}
     func refreshAccessibility(){
-        let signature=AccessibilitySignature(document:store.timelineDocument,selection:store.selectedIDs.union(store.placementProposal?.insertedClipIDs ?? []),frame:frame,bounds:bounds,viewport:visibleRect,windowFrame:window?.frame ?? .zero,pixelsPerSecond:store.pixelsPerSecond,layoutRevision:layout.revision,automationSelection:store.selectedAutomationPointIDs,lane:store.automationLane,decisions:showsDecisionLanes,cutSelection:selectedCutID)
+        let signature=AccessibilitySignature(document:store.timelineDocument,selection:store.selectedIDs.union(store.placementProposal?.insertedClipIDs ?? []),frame:frame,bounds:bounds,viewport:visibleRect,windowFrame:window?.frame ?? .zero,pixelsPerSecond:store.pixelsPerSecond,layoutRevision:layout.revision,automationSelection:store.selectedAutomationPointIDs,lane:store.automationLane,decisions:showsDecisionLanes,cutSelection:selectedCutID,placementPreview:store.placementProposal != nil)
         guard signature != accessibilitySignature else { return }
         accessibilitySignature=signature; accessibilityRebuildCount += 1
         removeAllToolTips();trackTooltips.removeAll()
@@ -103,6 +103,7 @@ struct TimelineSurface: NSViewRepresentable {
                 }
                 element.setAccessibilityRole(.button)
                 element.setAccessibilityParent(self)
+                element.setAccessibilityEnabled(store.placementProposal == nil)
                 element.setAccessibilityLabel(track.name+": "+clip.name)
                 element.setAccessibilityValue(String(format:"%.3f seconds, %.3f seconds long",clip.start.seconds,clip.duration.seconds)+(track.isLocked ? ", locked":"")+((store.selectedIDs.contains(clip.id) || store.placementProposal?.insertedClipIDs.contains(clip.id) == true) ? ", selected":""))
                 let frame=convert(rect(clip,row:row),to:nil)
@@ -118,7 +119,7 @@ struct TimelineSurface: NSViewRepresentable {
                             guard let self,self.store.placementProposal == nil else{return false}
                             self.store.automationLane=lane;self.store.selectAutomationPoint(point.id,toggle:true);self.needsDisplay=true;self.refreshAccessibility();return true
                         }
-                        pointElement.setAccessibilityRole(.button);pointElement.setAccessibilityParent(self)
+                        pointElement.setAccessibilityRole(.button);pointElement.setAccessibilityParent(self);pointElement.setAccessibilityEnabled(store.placementProposal == nil)
                         pointElement.setAccessibilityLabel("Toggle "+lane.label.lowercased()+" point")
                         pointElement.setAccessibilityValue(String(format:"%.5f seconds, ", (point.time-envelope.evaluationOffset).seconds)+AutomationScale.label(point.value*envelope.baseValue,lane:lane)+(store.selectedAutomationPointIDs.contains(point.id) ? ", selected":", unselected"))
                         let pointFrame=convert(box,to:nil);pointElement.setAccessibilityFrame(window?.convertToScreen(pointFrame) ?? pointFrame);elements.append(pointElement)
@@ -132,7 +133,7 @@ struct TimelineSurface: NSViewRepresentable {
                     guard let self,self.store.placementProposal == nil else { return false }
                     self.store.toggleTrack(track.id,property:property);self.needsDisplay=true;self.refreshAccessibility();return true
                 }
-                element.setAccessibilityRole(.button);element.setAccessibilityParent(self);element.setAccessibilityLabel(label+" "+track.name);element.setAccessibilityValue(active ? "On":"Off")
+                element.setAccessibilityRole(.button);element.setAccessibilityParent(self);element.setAccessibilityEnabled(store.placementProposal == nil);element.setAccessibilityLabel(label+" "+track.name);element.setAccessibilityValue(active ? "On":"Off")
                 let box=trackControlRect(index,row:row),frame=convert(box,to:nil)
                 element.setAccessibilityFrame(window?.convertToScreen(frame) ?? frame);elements.append(element)
                 trackTooltips[addToolTip(box,owner:self,userData:nil)]=label+" "+track.name
@@ -811,7 +812,7 @@ struct TimelineSurface: NSViewRepresentable {
 /// AppKit's synchronous accessibility callback enters an immutable Sendable action on its main-thread boundary.
 @MainActor private final class TimelineActionElement:NSAccessibilityElement {
     nonisolated let action: @MainActor @Sendable () -> Bool
-    init(action: @escaping @MainActor @Sendable () -> Bool) { self.action=action;super.init() }
+    init(action: @escaping @MainActor @Sendable () -> Bool) { self.action=action;super.init();setAccessibilityEnabled(true) }
     nonisolated override func accessibilityPerformPress()->Bool {
         let action=self.action
         return MainActor.assumeIsolated { action() }
@@ -821,7 +822,7 @@ struct TimelineSurface: NSViewRepresentable {
 @MainActor private final class TimelineHeightElement:NSAccessibilityElement {
     nonisolated let incrementAction:@MainActor @Sendable()->Bool
     nonisolated let decrementAction:@MainActor @Sendable()->Bool
-    init(increment:@escaping @MainActor @Sendable()->Bool,decrement:@escaping @MainActor @Sendable()->Bool){incrementAction=increment;decrementAction=decrement;super.init()}
+    init(increment:@escaping @MainActor @Sendable()->Bool,decrement:@escaping @MainActor @Sendable()->Bool){incrementAction=increment;decrementAction=decrement;super.init();setAccessibilityEnabled(true)}
     nonisolated override func accessibilityPerformIncrement()->Bool{let action=incrementAction;return MainActor.assumeIsolated{action()}}
     nonisolated override func accessibilityPerformDecrement()->Bool{let action=decrementAction;return MainActor.assumeIsolated{action()}}
 }

@@ -43,3 +43,28 @@ private func tl(_ n:Int64,_ d:Int64=1)->RationalTime { .init(value:n,timescale:d
     canvas.setBoundsOrigin(NSPoint(x:40,y:0));canvas.refreshAccessibility()
     #expect(canvas.accessibilityRebuildCount == baseline+3)
 }
+
+@MainActor @Test func timelineAccessibilityUpdatesForUnchangedPlacementPreview() throws {
+    _ = NSApplication.shared
+    let store=EditorStore(),clip=Clip(name:"Take",duration:tl(4))
+    store.replace(ProjectDocument(sequence:Sequence(tracks:[Track(name:"Video",kind:.video,clips:[clip])])))
+    let canvas=TimelineCanvas(store:store)
+    func controls() throws -> [NSAccessibilityElement] {
+        canvas.refreshAccessibility()
+        return try #require(canvas.accessibilityChildren() as? [NSAccessibilityElement])
+    }
+    func clipControl() throws -> NSAccessibilityElement {
+        try #require(try controls().first{$0.accessibilityLabel()=="Video: Take"})
+    }
+    #expect(try clipControl().isAccessibilityEnabled())
+    #expect(try clipControl().accessibilityPerformPress())
+    #expect(store.selection==clip.id)
+    let baseline=store.document
+    store.previewPlacement(.rippleTrim(clipID:clip.id,start:clip.start,end:clip.end),title:"Trim")
+    #expect(store.placementProposal?.document==baseline)
+    #expect(try !clipControl().isAccessibilityEnabled())
+    #expect(try !clipControl().accessibilityPerformPress())
+    store.cancelPlacement()
+    #expect(try clipControl().isAccessibilityEnabled())
+    #expect(try controls().first{$0.accessibilityLabel()=="Height Video"}?.isAccessibilityEnabled()==true)
+}
