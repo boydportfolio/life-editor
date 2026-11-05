@@ -4,7 +4,9 @@ Status: **planned** unless marked otherwise. A model field or a control alone do
 not complete a feature. Completion requires UI, persistence, undo, preview,
 export and relevant verification. This register retains the owner's full scope.
 
-Current priority: [reader reliability and native navigation](NATIVE-READER-INVESTIGATION.md).
+Current priority: remaining preview gates after the completed
+[running-app workflow and interface audit](MANUAL-WORKFLOW-AUDIT.md).
+[Reader reliability evidence](NATIVE-READER-INVESTIGATION.md) remains part of QA.
 
 Latest social delivery: [animated framing, canvas and caption exports](REFRAMING-CHECKPOINT.md).
 Earlier delivery: [safe guides and caption sequencing](SOCIAL-DELIVERY.md).

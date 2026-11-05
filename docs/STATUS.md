@@ -216,3 +216,12 @@ previous crashes as overlapping reader cancellation/startup/sample operations.
 A shared serial lifecycle now covers export and standalone readers. Twenty
 reproducer runs and the full 307-test native/helper suite pass; actual native
 navigation and release acceptance remain separately tracked.
+
+
+November 4: the [running-app workflow and interface audit](MANUAL-WORKFLOW-AUDIT.md)
+completes the combined split/title/music-fade save/reopen/export flow and an
+independent multicam master-audio delivery. It fixes stale paused clock updates,
+cut-field teardown edits, disabled accessibility states and saved project names.
+Final native/helper validation passes 316 tests and the optimized build passes.
+Full keyboard/VoiceOver, failure coverage, installation, real-footage usability
+and M1 measurements remain open; no release or tag is created.

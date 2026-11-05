@@ -3,7 +3,19 @@
 Host: macOS 15.6, Apple M4, 16 GB; Swift 6.2.3 CLT compiler/SDK.
 This is not an M1 benchmark. No usability or performance target is claimed met.
 
-## Latest automated run: native reader cancellation, 2026-11-03
+## Latest run: running-app workflow and interface audit, 2026-11-04
+
+Full native/helper verification passes: **316 tests across 15 suites in 59.634
+seconds**. The optimized app, strict ad-hoc signature and pinned helper checks pass.
+The [manual audit](MANUAL-WORKFLOW-AUDIT.md) completes import/edit/music fades/title,
+save/reopen/export and an independent four-camera master-audio delivery. Decoded
+exports agree with saved camera decisions and preserve the independent master.
+Actual UI interaction reproduces and verifies fixes for stale paused clock updates,
+focused cut-field reopening, disabled accessibility controls and saved naming.
+Full VoiceOver/keyboard, real-footage usability, M1 and other preview gates remain
+open. Hosted CI is tracked separately; no release or tag is implied.
+
+## Previous automated run: native reader cancellation, 2026-11-03
 
 Full native/helper verification passes: **307 tests across 15 suites in 54.666
 seconds**. The original crash reproduction passes 20 consecutive runs after the

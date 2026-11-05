@@ -91,3 +91,12 @@ November 3 reliability work pauses new features. The
 lifecycle overlaps and fixes them in export and standalone readers. The original
 reproducer passes 20 consecutive runs, and full native/helper checks pass 307
 tests. Native navigation must be verified before resuming feature work.
+
+
+November 4: the [running-app workflow and interface audit](MANUAL-WORKFLOW-AUDIT.md)
+completes the combined split/title/music-fade save/reopen/export flow and an
+independent multicam master-audio delivery. It fixes stale paused clock updates,
+cut-field teardown edits, disabled accessibility states and saved project names.
+Final native/helper validation passes 316 tests and the optimized build passes.
+Full keyboard/VoiceOver, failure coverage, installation, real-footage usability
+and M1 measurements remain open; no release or tag is created.

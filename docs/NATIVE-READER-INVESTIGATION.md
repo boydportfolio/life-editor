@@ -1,7 +1,7 @@
 # Native reader cancellation investigation
 
-November 3, 2026. Feature development is paused while reader stability and actual
-running-app navigation are verified.
+November 3–4, 2026. Reader stability and the core running-app navigation check
+are now verified; broader release acceptance remains separate.
 
 ## Reproduction
 
@@ -55,7 +55,7 @@ to return; it does not promise to preempt a permanently stuck framework call.
 - [x] Full native/helper suite: 307 tests across 15 suites pass in 54.666 seconds.
 - [x] The checked-in stress harness passes an additional real one-round run.
 - [x] Fresh optimized app build, strict ad-hoc signature and pinned helper checks pass.
-- [ ] Complete the running-app import/edit/save/reopen/export navigation check.
+- [x] Complete the running-app import/edit/save/reopen/export navigation check.
 
 Trace output is opt-in through `LIFE_NATIVE_READER_TRACE=/path/to/new.jsonl`.
 Records include job/reader IDs, monotonic time, thread, lifecycle events, output
@@ -82,3 +82,10 @@ running-app image was inspected. Pointer automation also reports
 `noWindowsAvailable` in Finder, and native Save-panel input/focus remains unreliable.
 The complete manual workflow is still open. No security setting was changed, and
 no recreated product screenshot is used as evidence.
+
+November 4: the [running-app audit](MANUAL-WORKFLOW-AUDIT.md) completes the core
+combined workflow and an independent multicam saved/reopened delivery in the
+updated optimized app. It also reproduces and fixes paused-clock, cut-field,
+accessibility-enabled-state and saved-name defects. Final local validation passes
+316 tests. The earlier inspection limitations above are historical evidence;
+full VoiceOver, failure-matrix, real-footage usability and release gates remain open.

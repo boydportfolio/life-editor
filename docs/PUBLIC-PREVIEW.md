@@ -23,13 +23,20 @@ No release or tag is created by these development commits.
 ## Preview gates
 
 - [ ] Exact candidate commit passes source CI and local native/helper tests.
-- [ ] Candidate app is built, launched and exercised with real media on a supported Mac.
-- [ ] Import, trim/split, music fade, styled title, save/reopen and export pass together.
-- [ ] Multicam master audio and switching pass a saved/reopened project smoke check.
+- [x] Development candidate is built, launched and exercised with decoded local media on a supported Mac.
+- [x] Import, split, music fade, styled title, save/reopen and export pass together.
+- [x] Multicam master audio and switching pass a saved/reopened project smoke check.
 - [ ] Keyboard navigation and the 1280 × 800 workspace receive a visible/manual pass.
 - [ ] Corrupt import, cancelled export and unwritable destination preserve existing work.
 - [ ] Source archive, package contents, dependency notices and checksums are verified.
 - [ ] Release notes match actual features, known issues and signing status.
+
+November 4: the [running-app audit](MANUAL-WORKFLOW-AUDIT.md) closes the core
+combined edit/delivery and saved/reopened multicam smoke checks in an optimized
+development build. Camera fixtures are synthetic local movies, not a concert
+usability session. The exact published commit still needs its own CI/package and
+installation checks. The historical inspection limits below do not describe the
+completed November 4 workflows.
 
 Passing unit/integration fixtures does not automatically close manual gates.
 November 1 native inspection now verifies launch, caption editing/navigation and
