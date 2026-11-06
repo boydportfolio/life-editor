@@ -8,7 +8,7 @@ The full [requirement register](ROADMAP.md) remains in scope.
 November 2 update: development has continued through the
 [social framing checkpoint](REFRAMING-CHECKPOINT.md). The original November 1
 target has passed; it does not imply that the preview gates below are complete.
-No release or tag is created by these development commits.
+No release or tag was created by those development commits.
 
 ## Work toward the date
 
@@ -75,3 +75,13 @@ account/security changes.
 The 1.0 gates still include remaining music/retiming tools, advanced creator tools,
 complete document integration, the broad format/failure matrix, complete accessibility,
 musician/student usability, M1 performance and all three owner workflows.
+
+
+November 6: the [candidate validation record](RELEASE-VALIDATION.md) records a
+fresh source checkout/build, extracted development-package checks, helper import,
+basic keyboard/workspace smoke and failure preservation. The first frozen
+candidate failed hosted optimized compilation despite local success; the source
+probe actor-isolation correction requires its own final CI/native and packaging
+checks before tagging. The public preview will be source-first, with no consumer
+app download advertised. The release tag/manifests, rather than the historical
+target date above, identify the published candidate.
