@@ -22,8 +22,8 @@ func visualAnimationImageTitleAndGraphicSurviveReopenAndMatchDecodedExport()asyn
     CGImageDestinationAddImage(writer,try #require(context.makeImage()),nil);try #require(CGImageDestinationFinalize(writer))
     let pipeline=MediaPipeline(),asset=try await pipeline.probe(source).asset
     let animation=VisualAnimation(keyframes:[
-        .init(time:.zero,visual:.init(x:0.25,y:0.5,scaleX:0.5,scaleY:0.5),interpolation:.eased),
-        .init(time:.init(value:2,timescale:1),visual:.init(x:0.75,y:0.5,scaleX:0.8,scaleY:0.8))
+        .init(time:.zero,visual:.init(x:0.25,y:0.5,scaleX:0.5,scaleY:0.5,rotationDegrees:0,cropLeft:0.05),interpolation:.eased),
+        .init(time:.init(value:2,timescale:1),visual:.init(x:0.75,y:0.5,scaleX:0.8,scaleY:0.8,rotationDegrees:60,cropRight:0.2))
     ])
     let image=Clip(assetID:asset.id,duration:.init(value:2,timescale:1),visualAnimation:animation)
     let title=Clip(start:.init(value:2,timescale:1),duration:.init(value:2,timescale:1),title:.init(text:"MOVE",fontSize:36,style:.init(y:0.5)),visualAnimation:animation)

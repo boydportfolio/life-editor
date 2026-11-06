@@ -51,7 +51,8 @@ public enum NativeEffectRegistry {
         .init(stableID:"life.adjust.levels",name:"Levels",parameters:[.init(name:"black",defaultValue:0,range:0...0.99,supportsAnimation:false),.init(name:"white",defaultValue:1,range:0.01...1,supportsAnimation:false),.init(name:"gamma",defaultValue:1,range:0.1...4,supportsAnimation:false)],supportsAnimation:false),
         .init(stableID:"life.adjust.hsl",name:"HSL",parameters:AdvancedColor.hueBands.flatMap { band in [.init(name:band+"Hue",defaultValue:0,range:-60...60,supportsAnimation:false),.init(name:band+"Saturation",defaultValue:0,range:-1...1,supportsAnimation:false),.init(name:band+"Lightness",defaultValue:0,range:-1...1,supportsAnimation:false)] },supportsAnimation:false)
     ]
-    public static func definition(for stableID: String) -> EffectDefinition? { (definitions+adjustments+advancedAdjustments).first { $0.stableID == stableID } }
+    public static let whiteBalance=EffectDefinition(stableID:WhiteBalance.stableID,name:"White Balance",parameters:WhiteBalance.channels.map{.init(name:$0,defaultValue:1,range:0.25...4,supportsAnimation:false)},supportsAnimation:false)
+    public static func definition(for stableID: String) -> EffectDefinition? { (definitions+adjustments+advancedAdjustments+[whiteBalance]).first { $0.stableID == stableID } }
     public static func make(_ stableID: String, strength: Double = 1, seed: UInt64 = 0) -> EffectInstance {
         EffectInstance(stableID:stableID,parameters:Dictionary(uniqueKeysWithValues:(definition(for:stableID)?.parameters ?? []).map { ($0.name,$0.defaultValue) }),strength:strength,seed:seed)
     }

@@ -58,6 +58,9 @@ enum EffectRenderer {
                 let value = max(definition?.range.lowerBound ?? -10000, min(definition?.range.upperBound ?? 10000, requested))
                 switch key {
                 case "curves", "levels", "hsl": image=AdvancedColorRenderer.apply(effect,to:image)
+                case "whiteBalance":
+                    let gains=WhiteBalance.channels.map{max(0.25,min(4,effect.parameters[$0] ?? 1))}
+                    if gains != [1,1,1]{image=image.applyingFilter("CIColorMatrix",parameters:["inputRVector":CIVector(x:gains[0],y:0,z:0,w:0),"inputGVector":CIVector(x:0,y:gains[1],z:0,w:0),"inputBVector":CIVector(x:0,y:0,z:gains[2],w:0)])}
                 case "exposure": image = image.applyingFilter("CIExposureAdjust", parameters: ["inputEV": value])
                 case "brightness": controls(1, value)
                 case "contrast": controls(1, 0, value)

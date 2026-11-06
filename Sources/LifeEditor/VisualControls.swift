@@ -24,7 +24,7 @@ struct VisualControls:View {
                 Picker("Crop",selection:Binding(get:{aspect},set:{value in setAspect(value)})){
                     ForEach(CropAspect.allCases,id:\.self){Text($0.rawValue).tag($0)}
                 }.help("Apply a source crop ratio; Free leaves edges independent").disabled(source==nil)
-                Button{aspect = .free;store.editSelected{$0.visual=CropGeometry.resettingCrop(in:$0.visual ?? .init())}}label:{Image(systemName:"arrow.counterclockwise").frame(width:24,height:24)}.help("Reset crop").accessibilityLabel("Reset crop")
+                Button{aspect = .free;store.setSelectedVisualTransform(CropGeometry.resettingCrop(in:visual))}label:{Image(systemName:"arrow.counterclockwise").frame(width:24,height:24)}.help("Reset crop").accessibilityLabel("Reset crop")
                 if let dimensionsError{Image(systemName:"exclamationmark.triangle").foregroundStyle(.orange).help(dimensionsError).accessibilityLabel(dimensionsError)}
             }
             HStack{
@@ -34,7 +34,7 @@ struct VisualControls:View {
             }.disabled(source==nil)
             HStack{
                 Text("Straighten")
-                Slider(value:Binding(get:{straightenAngle},set:{angle in straightenAngle=angle;store.editSelected{clip in var v=clip.visual ?? .init();v.rotationDegrees=straightenBase+angle;clip.visual=v}}),in:-45...45,onEditingChanged:{editing in if editing{store.beginGesture()}else{store.endGesture()}}).accessibilityLabel("Straighten angle")
+                Slider(value:Binding(get:{straightenAngle},set:{angle in straightenAngle=angle;{var v=visual;v.rotationDegrees=straightenBase+angle;store.setSelectedVisualTransform(v)}()}),in:-45...45,onEditingChanged:{editing in if editing{store.beginGesture()}else{store.endGesture()}}).accessibilityLabel("Straighten angle")
                 Text(String(format:"%+.1f°",straightenAngle)).font(.caption.monospacedDigit()).frame(width:46)
             }
             DisclosureGroup("Transform",isExpanded:$expanded){
@@ -55,8 +55,7 @@ struct VisualControls:View {
         .task(id:sourceKey){await loadDimensions()}
         .onAppear{syncStraighten(visual.rotationDegrees)}
         .onChange(of:store.selection){_,_ in aspect = .free;syncStraighten(visual.rotationDegrees)}
-        .onChange(of:store.selectedClip?.visual?.rotationDegrees){_,rotation in
-            let value=rotation ?? 0
+        .onChange(of:visual.rotationDegrees){_,value in
             if abs(value-straightenBase-straightenAngle)>0.000001{syncStraighten(value)}
         }
         .onChange(of:store.selectedClip?.visual){_,value in
@@ -69,7 +68,7 @@ struct VisualControls:View {
     private func setAspect(_ value:CropAspect){
         aspect=value
         guard let source,value != .free else{return}
-        do{let updated=try CropGeometry.applying(value,to:visual,source:source);store.editSelected{$0.visual=updated}}
+        do{let updated=try CropGeometry.applying(value,to:visual,source:source);store.setSelectedVisualTransform(updated)}
         catch{store.error=error.localizedDescription}
     }
     private func place(_ mode:CropFitMode){
@@ -107,9 +106,7 @@ struct VisualControls:View {
     }
     func field(_ label:String,_ key:WritableKeyPath<VisualTransform,Double>)->some View {
         HStack{Text(label);TextField(label,value:Binding(get:{visual[keyPath:key]},set:{value in
-            if [\VisualTransform.x,\VisualTransform.y,\VisualTransform.scaleX,\VisualTransform.scaleY].contains(key){
-                var updated=visual;updated[keyPath:key]=value;store.setSelectedVisualTransform(updated)
-            }else{store.editSelected{clip in var visual=clip.visual ?? .init();visual[keyPath:key]=value;clip.visual=visual}}
+            var updated=visual;updated[keyPath:key]=value;store.setSelectedVisualTransform(updated)
         }),format:.number.precision(.fractionLength(2))).textFieldStyle(.roundedBorder).accessibilityLabel(label)}
     }
 }
@@ -121,6 +118,7 @@ struct TitleControls:View {
             TitleLayoutPresetControls(store:store)
             TextPresetControls(store:store)
             TitleFontControls(store:store)
+            CaptionWordTimingControls(store:store)
             Picker("Animate",selection:Binding(get:{store.selectedClip?.title?.animation?.kind.rawValue ?? ""},set:{value in
                 store.editSelected{clip in if let kind=TitleAnimationKind(rawValue:value){var animation=clip.title?.animation ?? TitleAnimation(kind:kind);animation.kind=kind;clip.title?.animation=animation}else{clip.title?.animation=nil}}
             })){

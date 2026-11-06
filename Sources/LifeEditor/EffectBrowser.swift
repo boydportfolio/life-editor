@@ -54,6 +54,11 @@ struct EffectBrowser:View {
             }else{
                 ScrollView{
                     VStack(alignment:.leading,spacing:12){
+                        HStack{
+                            Text("White balance");Spacer()
+                            Button{store.beginWhiteBalanceSampling()}label:{Image(systemName:"eyedropper").frame(width:24,height:24)}.help("Pick neutral gray in the viewer").accessibilityLabel("Sample white balance")
+                            Button{store.resetWhiteBalance()}label:{Image(systemName:"arrow.counterclockwise").frame(width:24,height:24)}.help("Reset white balance").accessibilityLabel("Reset white balance").disabled(!(store.selectedClip?.effects?.contains{$0.stableID==WhiteBalance.stableID} ?? false))
+                        }
                         AdvancedColorControls(store:store)
                         ForEach(NativeEffectRegistry.adjustments){definition in
                             if let parameter=definition.parameters.first {

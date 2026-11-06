@@ -37,8 +37,8 @@ public struct AutomationEnvelope: Codable, Equatable, Sendable {
     }
 }
 public struct TitleContent: Codable, Equatable, Sendable {
-    public var text: String; public var fontSize: Double; public var style: TitleStyle?; public var animation: TitleAnimation?
-    public init(text: String, fontSize: Double = 64, style: TitleStyle? = nil, animation: TitleAnimation? = nil) { self.text=text; self.fontSize=fontSize; self.style=style; self.animation=animation }
+    public var text: String; public var fontSize: Double; public var style: TitleStyle?; public var animation: TitleAnimation?; public var wordTiming:TitleWordTiming?
+    public init(text: String, fontSize: Double = 64, style: TitleStyle? = nil, animation: TitleAnimation? = nil, wordTiming:TitleWordTiming? = nil) { self.text=text; self.fontSize=fontSize; self.style=style; self.animation=animation;self.wordTiming=wordTiming }
 }
 public struct Clip: Identifiable, Codable, Equatable, Sendable {
     public var id: UUID; public var name: String; public var assetID: UUID?
@@ -47,9 +47,10 @@ public struct Clip: Identifiable, Codable, Equatable, Sendable {
     public var volume: AutomationEnvelope; public var opacity: AutomationEnvelope; public var title: TitleContent?
     public var freezeFrame:FreezeFrameContent?
     public var visualAnimation:VisualAnimation?
+    public var propertyAnimations:[PropertyAnimation]?
     public var effects: [EffectInstance]?; public var visual: VisualTransform?; public var graphic: GraphicContent?; public var audio: AudioSettings?
-    public init(id: UUID = UUID(), name: String = "Clip", assetID: UUID? = nil, start: RationalTime = .zero, duration: RationalTime, sourceStart: RationalTime = .zero, speed: Double = 1, preservesPitch: Bool = true, linkID: UUID? = nil, volume: AutomationEnvelope = .init(), opacity: AutomationEnvelope = .init(), title: TitleContent? = nil, effects: [EffectInstance]? = nil, visual: VisualTransform? = nil, groupID: UUID? = nil, audioEnabled:Bool? = nil, graphic: GraphicContent? = nil, audio: AudioSettings? = nil, freezeFrame:FreezeFrameContent? = nil, visualAnimation:VisualAnimation? = nil) {
-        self.id=id; self.name=name; self.assetID=assetID; self.start=start; self.duration=duration; self.sourceStart=sourceStart; self.speed=speed; self.preservesPitch=preservesPitch; self.linkID=linkID; self.volume=volume; self.opacity=opacity; self.title=title; self.effects=effects; self.visual=visual;self.audioEnabled=audioEnabled; self.groupID=groupID; self.graphic=graphic; self.audio=audio;self.freezeFrame=freezeFrame;self.visualAnimation=visualAnimation
+    public init(id: UUID = UUID(), name: String = "Clip", assetID: UUID? = nil, start: RationalTime = .zero, duration: RationalTime, sourceStart: RationalTime = .zero, speed: Double = 1, preservesPitch: Bool = true, linkID: UUID? = nil, volume: AutomationEnvelope = .init(), opacity: AutomationEnvelope = .init(), title: TitleContent? = nil, effects: [EffectInstance]? = nil, visual: VisualTransform? = nil, groupID: UUID? = nil, audioEnabled:Bool? = nil, graphic: GraphicContent? = nil, audio: AudioSettings? = nil, freezeFrame:FreezeFrameContent? = nil, visualAnimation:VisualAnimation? = nil, propertyAnimations:[PropertyAnimation]? = nil) {
+        self.id=id; self.name=name; self.assetID=assetID; self.start=start; self.duration=duration; self.sourceStart=sourceStart; self.speed=speed; self.preservesPitch=preservesPitch; self.linkID=linkID; self.volume=volume; self.opacity=opacity; self.title=title; self.effects=effects; self.visual=visual;self.audioEnabled=audioEnabled; self.groupID=groupID; self.graphic=graphic; self.audio=audio;self.freezeFrame=freezeFrame;self.visualAnimation=visualAnimation;self.propertyAnimations=propertyAnimations
     }
     public var end: RationalTime { start + duration }
     public func checkedSourceTime(at sequenceTime: RationalTime) throws -> RationalTime {
@@ -121,7 +122,7 @@ public struct Sequence: Codable, Equatable, Sendable {
     public var duration: RationalTime { tracks.flatMap(\.clips).map(\.end).max() ?? .zero }
 }
 public struct ProjectDocument: Identifiable, Codable, Equatable, Sendable {
-    public static let currentVersion = 10
+    public static let currentVersion = 11
     public var version: Int; public var id: UUID; public var name: String; public var sequence: Sequence; public var assets: [MediaAsset]
     public init(id: UUID = UUID(), name: String = "Untitled", sequence: Sequence = .init(), assets: [MediaAsset] = []) { self.version=Self.currentVersion; self.id=id; self.name=name; self.sequence=sequence; self.assets=assets }
     public static func decode(_ data: Data) throws -> Self {
@@ -164,7 +165,12 @@ public struct ProjectDocument: Identifiable, Codable, Equatable, Sendable {
                 guard !adjustmentIDs.contains(clip.id), animation.isValid,
                       validTime(try animation.elapsedTime(at:clip.duration),signed:true) else { throw DocumentError.invalidTiming }
             }
+            if let animations=clip.propertyAnimations {
+                guard animations.count<=128,Set(animations.map(\.id)).count==animations.count,Set(animations.map(\.identity)).count==animations.count else{throw DocumentError.invalidTiming}
+                for animation in animations{guard animation.isValid(in:clip),validTime(try animation.elapsedTime(at:clip.duration),signed:true) else{throw DocumentError.invalidTiming}}
+            }
             if let style=clip.title?.style, !style.isValid { throw DocumentError.invalidTiming }
+            if let title=clip.title,let timing=title.wordTiming,!timing.isValid(for:title.text){throw DocumentError.invalidTiming}
             if let animation=clip.title?.animation {
                 guard animation.isValid, validTime(try animation.elapsedTime(at:clip.duration),signed:true) else { throw DocumentError.invalidTiming }
             }

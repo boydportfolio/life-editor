@@ -67,15 +67,20 @@ final class EditorStore: ObservableObject {
     var timelineDocument:ProjectDocument{placementProposal?.document ?? document}
     @Published var selectedTransition:UUID?{didSet{if oldValue != selectedTransition{cancelColorSampling()}}}
     @Published var selectedIDs:Set<UUID>=[]
+    @Published var selectedVisualKeyIDs=Set<UUID>()
     @Published var selectedAutomationPointIDs=Set<UUID>()
     @Published var selectedAutomationPoint:UUID?{didSet{
         if let id=selectedAutomationPoint{if !selectedAutomationPointIDs.contains(id){selectedAutomationPointIDs=[id]}}
         else{selectedAutomationPointIDs=[]}
     }}
     @Published var automationLane:AutomationLane = .volume{didSet{if oldValue != automationLane{selectedAutomationPoint=nil}}}
-    @Published var selection: UUID? {didSet{if let selection {if !selectedIDs.contains(selection){selectedIDs=[selection]}}else{selectedIDs=[]};if oldValue != selection{cancelColorSampling();selectedAutomationPoint=nil;selectedDrawingStrokeID=nil;selectedDrawingPointIndex=0;automationLane=selectedUsesOpacity ? .opacity:.volume}}}
+    @Published var selection: UUID? {didSet{if let selection {if !selectedIDs.contains(selection){selectedIDs=[selection]}}else{selectedIDs=[]};if oldValue != selection{selectedVisualKeyIDs=[];cancelColorSampling();selectedAutomationPoint=nil;selectedDrawingStrokeID=nil;selectedDrawingPointIndex=0;automationLane=selectedUsesOpacity ? .opacity:.volume}}}
     @Published var playheadTime:RationalTime = .zero
     var playhead:Double {get{playheadTime.seconds}set{playheadTime=time(newValue,audio:true)}}
+    @Published var metronomeEnabled=false{didSet{synchronizeMonitorMetronome()}}
+    @Published var metronomeSubdivisions=false{didSet{synchronizeMonitorMetronome()}}
+    @Published var metronomeGain=0.12{didSet{synchronizeMonitorMetronome()}}
+    private var monitorMetronome:MonitorMetronome?
     @Published var playing = false
     @Published var busy = false
     @Published var importProgress:Double=0
@@ -93,6 +98,8 @@ final class EditorStore: ObservableObject {
     @Published var audioMeters:[AudioMeterFrame]=[]
     private var audioMeasurementTask:Task<Void,Never>?
     @Published var cacheBytes:Int64=0
+    @Published var transcriptionLocaleIdentifier=Locale.current.identifier
+    var transcriptionLocale:Locale{Locale(identifier:transcriptionLocaleIdentifier)}
     private let transcription=LocalTranscription()
     private var transcriptionTask:Task<Void,Never>?
     private var angleProxyTasks:[UUID:Task<Void,Never>]=[:]
@@ -179,6 +186,12 @@ final class EditorStore: ObservableObject {
         guard playing else{return}
         playheadTime = time.seconds.isFinite && time.timescale>0 ? RationalTime(value:time.value,timescale:Int64(time.timescale)):.zero
         if playhead >= playbackDocument.sequence.duration.seconds || activeSwitchRange.map({playhead >= $0.end.seconds}) == true {stopPlayback()}
+        synchronizeMonitorMetronome()
+    }
+    private func synchronizeMonitorMetronome(){
+        guard metronomeEnabled,playing else{monitorMetronome?.stop();return}
+        do{if monitorMetronome==nil{monitorMetronome=MonitorMetronome()};try monitorMetronome?.update(position:playheadTime,grid:document.sequence.musicalGrid ?? .init(),subdivisions:metronomeSubdivisions,gain:metronomeGain)}
+        catch{metronomeEnabled=false;self.error="Audio monitoring is unavailable. The project audio is unchanged."}
     }
     var selectedClip: Clip? { document.sequence.tracks.flatMap(\.clips).first { $0.id == selection } }
     var canUndo: Bool { placementProposal != nil || editor.canUndo }
@@ -244,13 +257,15 @@ final class EditorStore: ObservableObject {
     func cancelColorSampling(){samplingColor=false;colorSampleAction=nil}
     func sampleViewerColor(x:Double,y:Double){
         guard samplingColor else{return}
-        guard let buffer=videoOutput?.copyPixelBuffer(forItemTime:player.currentTime(),itemTimeForDisplay:nil),let color=ViewerColorSampler.sample(buffer,x:x,y:y) else{error="Seek to a visible frame and sample again.";cancelColorSampling();return}
+        guard let color=ViewerColorSampler.sample(videoOutput,at:playheadTime,rate:document.sequence.settings.frameRate,x:x,y:y) else{error="Seek to a visible frame and sample again.";cancelColorSampling();return}
         let action=colorSampleAction;cancelColorSampling();action?(color)
     }
     func seek(_ seconds:Double){seek(time(seconds,audio:true))}
     func seek(_ exact:RationalTime){
         let position=min(max(.zero,exact),max(.zero,playbackDocument.sequence.duration))
         playheadTime=position
+        monitorMetronome?.stop()
+        synchronizeMonitorMetronome()
         invalidatePlaybackMeter();requestPlaybackMeter()
         synchronizeCameraPlayers(position.seconds,playing:playing)
         player.seek(to:CMTime(value:position.value,timescale:CMTimeScale(position.timescale)),toleranceBefore:.zero,toleranceAfter:.zero)
@@ -275,11 +290,11 @@ final class EditorStore: ObservableObject {
                 }catch{recordingPass=false;activeSwitchRange=nil;rangeOriginalGroup=nil;endGesture();self.error=Self.message(error);return}
             }
         }
-        player.play();playing=true
+        player.play();playing=true;synchronizeMonitorMetronome()
         synchronizeCameraPlayers(playhead,playing:true)
     }
     func stopPlayback() {
-        player.pause();playing=false
+        player.pause();playing=false;monitorMetronome?.stop()
         cameraPlayers.values.forEach{$0.pause()}
         if recordingPass {recordingPass=false;activeSwitchRange=nil;rangeOriginalGroup=nil;recordedRangeCuts=[];recordedRangeAudioCuts=[];endGesture();rebuild()}
         clearAngleAudition()
@@ -362,7 +377,16 @@ final class EditorStore: ObservableObject {
         guard !document.sequence.tracks.contains(where: { $0.isLocked && $0.clips.contains(where: {$0.id == selection}) }) else { error = "Unlock the track to edit."; return }
         var next = document
         for t in next.sequence.tracks.indices {
-            if let c = next.sequence.tracks[t].clips.firstIndex(where: { $0.id == selection }) { change(&next.sequence.tracks[t].clips[c]) }
+            if let c = next.sequence.tracks[t].clips.firstIndex(where: { $0.id == selection }) {
+                let previousEffects=Set((next.sequence.tracks[t].clips[c].effects ?? []).map(\.id))
+                change(&next.sequence.tracks[t].clips[c])
+                let remainingEffects=Set((next.sequence.tracks[t].clips[c].effects ?? []).map(\.id))
+                let removedEffects=previousEffects.subtracting(remainingEffects)
+                next.sequence.tracks[t].clips[c].propertyAnimations?.removeAll{curve in
+                    curve.effectID.map{removedEffects.contains($0)} ?? false
+                }
+                if next.sequence.tracks[t].clips[c].propertyAnimations?.isEmpty == true{next.sequence.tracks[t].clips[c].propertyAnimations=nil}
+            }
         }
         replace(next)
     }
@@ -490,7 +514,7 @@ final class EditorStore: ObservableObject {
     func detachAudio(){
         guard let clip=selectedClip,let id=clip.assetID,document.assets.first(where:{$0.id==id})?.kind == .video,(clip.audioEnabled ?? true) else{return}
         guard !document.sequence.tracks.contains(where:{$0.isLocked && $0.clips.contains(where:{$0.id==clip.id})}) else{error="Unlock the track to edit.";return}
-        var next=document;var audio=clip;audio.id=UUID();audio.name+=" Audio";audio.effects=nil;audio.visual=nil;audio.groupID=nil;audio.linkID=nil;audio.audioEnabled=true
+        var next=document;var audio=clip;audio.id=UUID();audio.name+=" Audio";audio.effects=nil;audio.visual=nil;audio.visualAnimation=nil;audio.propertyAnimations=nil;audio.groupID=nil;audio.linkID=nil;audio.audioEnabled=true
         for t in next.sequence.tracks.indices {if let c=next.sequence.tracks[t].clips.firstIndex(where:{$0.id==clip.id}){next.sequence.tracks[t].clips[c].audioEnabled=false;next.sequence.tracks[t].clips[c].linkID=nil}}
         next.sequence.tracks.append(Track(name:audio.name,kind:.audio,clips:[audio]));replace(next)
     }
@@ -584,7 +608,7 @@ final class EditorStore: ObservableObject {
     }
     func transcribeSelected(){
         guard !transcribing,let clip=selectedClip,let asset=document.assets.first(where:{$0.id==clip.assetID}) else{return}
-        let projectID=document.id;transcribing=true
+        let projectID=document.id,locale=transcriptionLocale;transcribing=true
         transcriptionTask=Task{
             defer{transcribing=false}
             let folder=FileManager.default.temporaryDirectory.appendingPathComponent("life-transcription-"+UUID().uuidString,isDirectory:true)
@@ -602,7 +626,7 @@ final class EditorStore: ObservableObject {
                     let request=ProjectDocument(sequence:Sequence(settings:document.sequence.settings,tracks:[Track(name:"Speech",kind:.audio,clips:[source])]),assets:[asset])
                     try await media.export(ProjectSnapshot(document:request),to:requestURL,options:ExportOptions(format:.wav))
                     try Task.checkCancellation()
-                    let cues=try await transcription.transcribe(url:requestURL)
+                    let cues=try await transcription.transcribe(url:requestURL,locale:locale)
                     try Task.checkCancellation()
                     for cue in cues where cue.start<chunk {
                         let duration=min(cue.duration,chunk-cue.start)

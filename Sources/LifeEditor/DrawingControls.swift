@@ -14,7 +14,7 @@ struct DrawingControls:View {
                 Image(systemName:"eraser").tag(3).help("Erase stroke").accessibilityLabel("Erase stroke")
                 Image(systemName:"cursorarrow").tag(4).help("Edit strokes").accessibilityLabel("Edit strokes")
             }.pickerStyle(.segmented)
-            if editing {strokeSelection}
+            if editing {strokeSelection;PropertyAnimationControls(store:store)}
             Group{
                 if store.drawingMode != 3 {
                     SharedColorPicker(label:"Color",color:color,store:store)

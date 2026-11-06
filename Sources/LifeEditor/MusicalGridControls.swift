@@ -6,8 +6,15 @@ struct MusicalGridControls:View {
     @State private var anchorBeat=0
     var body:some View{
         VStack(alignment:.leading,spacing:12){
+            HStack{
+                Toggle(isOn:$store.metronomeEnabled){Image(systemName:"metronome").frame(width:28,height:28)}.toggleStyle(.button).help("Monitor metronome · excluded from export").accessibilityLabel("Monitor metronome")
+                Toggle("Divisions",isOn:$store.metronomeSubdivisions).toggleStyle(.button).disabled(!store.metronomeEnabled)
+                Slider(value:$store.metronomeGain,in:0...0.5).frame(maxWidth:70).accessibilityLabel("Metronome monitor level").disabled(!store.metronomeEnabled)
+            }
+            HStack{Text("Offset");TextField("Seconds",value:Binding(get:{store.document.sequence.musicalGrid?.offset.seconds ?? 0},set:{value in guard value.isFinite,abs(value)<=86400 else{return};store.setGrid{grid in if let moved=try? grid.moved(by:store.time(abs(value),audio:true).scaled(by:value<0 ? -1:1)-grid.offset){grid=moved}}}),format:.number.precision(.fractionLength(3))).textFieldStyle(.roundedBorder).accessibilityLabel("Musical grid offset seconds")}
+
             Picker("Beat unit",selection:Binding(get:{store.document.sequence.musicalGrid?.beatUnit ?? 4},set:{value in store.setGrid{$0.beatUnit=value}})){
-                Text("¼").tag(4);Text("⅛").tag(8);Text("½").tag(2)
+                Text("1").tag(1);Text("½").tag(2);Text("¼").tag(4);Text("⅛").tag(8);Text("¹⁄₁₆").tag(16);Text("¹⁄₃₂").tag(32)
             }.pickerStyle(.segmented)
             HStack{Text("Swing");Slider(value:Binding(get:{store.document.sequence.musicalGrid?.swing ?? 0},set:{value in store.setGrid{$0.swing=value}}),in:0...1,onEditingChanged:{active in if active{store.beginGesture()}else{store.endGesture()}}).accessibilityLabel("Grid swing")}
             HStack{

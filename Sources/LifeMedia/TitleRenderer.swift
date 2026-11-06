@@ -8,29 +8,32 @@ import LifeCore
 /// whole graphemes in the full Core Text layout, so existing glyphs never jump.
 enum TitleRenderer {
     private static let cache = TitleBitmapCache()
-    static func image(_ title: TitleContent, size: CGSize, visibleCharacters: Int? = nil) -> CIImage? {
+    static func image(_ title: TitleContent, size: CGSize, visibleCharacters: Int? = nil, localTime:RationalTime? = nil) -> CIImage? {
         guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0,
               size.width <= 16384, size.height <= 16384, size.width * size.height <= 33_554_432 else { return nil }
         let count = visibleCharacters.map { max(0, min(title.text.count, $0)) }
         if count == 0 { return CIImage(color: .clear).cropped(to: CGRect(origin: .zero, size: size)) }
-        var appearance = title; appearance.animation = nil
+        let activeWord=localTime.flatMap{title.wordTiming?.activeWord(at:$0,text:title.text)}
+        var appearance = title; appearance.animation = nil;appearance.wordTiming=nil
         let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
         guard var data = try? encoder.encode(appearance) else { return nil }
         data.append(Data("|\(size.width)x\(size.height)|\(count.map(String.init) ?? "full")".utf8))
+        if let word=activeWord,let color=title.wordTiming?.highlightColor{data.append(Data("|word:\(word.utf16Location):\(word.utf16Length)|\(color.red),\(color.green),\(color.blue),\(color.alpha)".utf8))}
         let key = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
         if let image = cache.get(key) { return image }
-        guard let image = rasterize(title, size: size, visibleCharacters: count) else { return nil }
+        guard let image = rasterize(title, size: size, visibleCharacters: count,activeWord:activeWord) else { return nil }
         cache.put(image, key: key, cost: Int(size.width * size.height * 4))
         return image
     }
     static func animated(_ image: CIImage, title: TitleContent, localTime: RationalTime, canvas: CGRect) -> CIImage {
+        let image=title.wordTiming == nil ? image:(self.image(title,size:canvas.size,localTime:localTime) ?? image)
         guard let animation = title.animation else { return image }
         let elapsed = (try? animation.elapsedTime(at: localTime).seconds) ?? 0
         let p = max(0, min(1, elapsed / animation.duration))
         if p >= 1 { return image }
         if p <= 0 { return CIImage(color: .clear).cropped(to: canvas) }
         if animation.kind == .typewriter {
-            return self.image(title, size: canvas.size, visibleCharacters: Int(floor(Double(title.text.count) * p))) ?? CIImage(color: .clear).cropped(to: canvas)
+            return self.image(title, size: canvas.size, visibleCharacters: Int(floor(Double(title.text.count) * p)),localTime:localTime) ?? CIImage(color: .clear).cropped(to: canvas)
         }
         let eased = p * p * (3 - 2 * p)
         var opacity = eased
@@ -64,7 +67,7 @@ enum TitleRenderer {
             .transformed(by: CGAffineTransform(translationX: anchor.x + offset.x, y: anchor.y + offset.y))
             .applyingFilter("CIColorMatrix", parameters: ["inputAVector": CIVector(x: 0, y: 0, z: 0, w: opacity)])
     }
-    private static func rasterize(_ title: TitleContent, size: CGSize, visibleCharacters: Int?) -> CIImage? {
+    private static func rasterize(_ title: TitleContent, size: CGSize, visibleCharacters: Int?,activeWord:TimedTitleWord?) -> CIImage? {
         // Core Text renders to a stable bitmap shared by preview and export.
         guard let context = CGContext(data: nil, width: Int(size.width), height: Int(size.height), bitsPerComponent: 8,
                                       bytesPerRow: 0, space: CGColorSpace(name: CGColorSpace.sRGB)!,
@@ -97,7 +100,10 @@ enum TitleRenderer {
             attributes[NSAttributedString.Key(kCTStrokeWidthAttributeName as String)] = -style.outlineWidth * 100 / title.fontSize
             attributes[NSAttributedString.Key(kCTStrokeColorAttributeName as String)] = color(style.outlineColor)
         }
-        let text = NSAttributedString(string: title.text, attributes: attributes)
+        let text = NSMutableAttributedString(string: title.text, attributes: attributes)
+        if let word=activeWord,let highlight=title.wordTiming?.highlightColor{
+            text.addAttribute(NSAttributedString.Key(kCTForegroundColorAttributeName as String),value:color(highlight),range:NSRange(location:word.utf16Location,length:word.utf16Length))
+        }
         let setter = CTFramesetterCreateWithAttributedString(text)
         let measured = CTFramesetterSuggestFrameSizeWithConstraints(setter, CFRange(location: 0, length: 0), nil,
             CGSize(width: size.width * 0.9, height: size.height * 0.9), nil)

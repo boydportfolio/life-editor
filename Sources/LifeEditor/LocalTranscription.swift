@@ -34,6 +34,7 @@ enum LocalTranscriptionError: Error, Equatable, LocalizedError {
     private var pendingFailure: LocalTranscriptionError?
     private var sessionID: UUID?
 
+    static var supportedLocaleIdentifiers:[String]{Array(Set(SFSpeechRecognizer.supportedLocales().map(\.identifier)+[Locale.current.identifier])).sorted()}
     static func supports(locale: Locale) -> Bool {
         guard let recognizer=SFSpeechRecognizer(locale:locale) else { return false }
         return permitsLocalRecognition(onDeviceSupported:recognizer.supportsOnDeviceRecognition,isAvailable:recognizer.isAvailable)

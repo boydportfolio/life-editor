@@ -70,9 +70,12 @@ final class LifeVideoCompositor: NSObject, AVVideoCompositing, @unchecked Sendab
         cancellationLock.withLock { generation &+= 1 }
     }
     private func layerImage(_ layer: RenderLayer, request: AVAsynchronousVideoCompositionRequest, canvas: CGRect, time: RationalTime) -> CIImage? {
-        if let group = layer.multicam, selectedAngle(in: group, at: time) != layer.clip.assetID { return nil }
+        let clip=layer.clip.evaluatedProperties(at:time-layer.clip.start)
+        if let group = layer.multicam, selectedAngle(in: group, at: time) != clip.assetID { return nil }
         var foreground: CIImage
-        if let title = layer.titleImage { foreground = title }
+        if !(clip.propertyAnimations ?? []).isEmpty,let title=clip.title,let image=TitleRenderer.image(title,size:canvas.size){foreground=image}
+        else if !(clip.propertyAnimations ?? []).isEmpty,let graphic=clip.graphic,let image=GraphicRenderer.image(graphic,size:canvas.size){foreground=image}
+        else if let title = layer.titleImage { foreground = title }
         else if let id = layer.trackID, let buffer = request.sourceFrame(byTrackID: id) {
             foreground = CIImage(cvPixelBuffer: buffer).transformed(by: layer.transform)
             let extent = foreground.extent
@@ -82,11 +85,11 @@ final class LifeVideoCompositor: NSObject, AVVideoCompositing, @unchecked Sendab
                 .transformed(by: CGAffineTransform(translationX: (canvas.width - extent.width * scale) / 2,
                                                    y: (canvas.height - extent.height * scale) / 2))
         } else { return nil }
-        if let title = layer.clip.title { foreground = TitleRenderer.animated(foreground, title: title, localTime: time - layer.clip.start, canvas: canvas) }
-        let localTime = max(.zero, min(layer.clip.duration, time - layer.clip.start))
-        foreground = EffectRenderer.apply(layer.clip.effects ?? [], to: foreground, time: time - layer.clip.start + (layer.clip.freezeFrame?.effectTimeOffset ?? .zero), sourceSeconds:CamcorderDateRenderer.sourceSeconds(for:layer.clip,at:time))
-        foreground = EffectRenderer.transform(foreground, visual: layer.clip.visualAnimation == nil ? layer.clip.visual:layer.clip.visualTransform(at:time-layer.clip.start), canvas: canvas)
-        let opacity = max(0, min(1, layer.clip.opacity.value(at: localTime)))
+        if let title = clip.title { foreground = TitleRenderer.animated(foreground, title: title, localTime: time - clip.start, canvas: canvas) }
+        let localTime = max(.zero, min(clip.duration, time - clip.start))
+        foreground = EffectRenderer.apply(clip.effects ?? [], to: foreground, time: time - clip.start + (clip.freezeFrame?.effectTimeOffset ?? .zero), sourceSeconds:CamcorderDateRenderer.sourceSeconds(for:layer.clip,at:time))
+        foreground = EffectRenderer.transform(foreground, visual: clip.visualAnimation == nil ? clip.visual:clip.visualTransform(at:time-clip.start), canvas: canvas)
+        let opacity = max(0, min(1, clip.opacity.value(at: localTime)))
         return foreground.applyingFilter("CIColorMatrix", parameters: ["inputAVector": CIVector(x: 0, y: 0, z: 0, w: opacity)])
     }
 
@@ -109,7 +112,8 @@ final class LifeVideoCompositor: NSObject, AVVideoCompositing, @unchecked Sendab
                     request.finish(with:NSError(domain:"LifeEditor.Render",code:2,userInfo:[NSLocalizedDescriptionKey:"Invalid adjustment layer clock."]))
                     return
                 }
-                let adjusted=EffectRenderer.apply(layer.clip.effects ?? [],to:image,timeSeconds:effectSeconds).cropped(to:canvas)
+                let evaluated=layer.clip.evaluatedProperties(at:time-layer.clip.start)
+                let adjusted=EffectRenderer.apply(evaluated.effects ?? [],to:image,timeSeconds:effectSeconds).cropped(to:canvas)
                 let opacity=max(0,min(1,layer.clip.opacity.value(at:time-layer.clip.start)))
                 image=image.applyingFilter("CIDissolveTransition",parameters:["inputTargetImage":adjusted,"inputTime":opacity]).cropped(to:canvas)
                 continue

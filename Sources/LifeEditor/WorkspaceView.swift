@@ -77,6 +77,7 @@ struct WorkspaceView: View {
             Text(store.projectDisplayName + (store.dirty ? " •" : "")).font(.system(size:12,weight:.medium)).foregroundStyle(.secondary).lineLimit(1)
             Spacer()
             if let failure=store.autosaveError{icon("externaldrive.badge.exclamationmark","Autosave failed"){store.error=failure}}
+            if store.transcribing{ProgressView().controlSize(.small).accessibilityLabel("Transcribing on device");icon("xmark","Cancel transcription",action:store.cancelTranscription)}
             if store.busy {ProgressView(value:store.importProgress).frame(width:50).accessibilityLabel("Preparing media");icon("xmark","Cancel import"){store.cancelImport()}}
             if store.exporting {
                 ProgressView().controlSize(.small).accessibilityLabel("Exporting")
@@ -167,7 +168,7 @@ struct WorkspaceView: View {
                 Button("Import…", action:store.importMedia)
                 HStack{Button("SRT"){store.importCaptions()};Button("Caption"){store.addManualCaption()}}
                 if store.transcribing {Button("Cancel Transcription"){store.cancelTranscription()}}
-                else {Button("Transcribe"){store.transcribeSelected()}.disabled(store.selectedClip?.assetID==nil || !LocalTranscription.supports(locale:.current)).help(LocalTranscription.supports(locale:.current) ? "On-device transcription":"On-device transcription unavailable")}
+                else {Button("Transcribe"){store.transcribeSelected()}.disabled(store.selectedClip?.assetID==nil || !LocalTranscription.supports(locale:store.transcriptionLocale)).help(LocalTranscription.supports(locale:store.transcriptionLocale) ? "On-device transcription":"On-device transcription unavailable")}
 
             } else if store.panel == .effects {EffectBrowser(store:store)}
             else if store.panel == .audio {
@@ -181,7 +182,7 @@ struct WorkspaceView: View {
                 ScrollView {VStack(alignment:.leading,spacing:14){
                 TextField("Name",text:Binding(get:{store.selectedClip?.name ?? ""},set:{text in store.editSelected{$0.name=text}})).textFieldStyle(.roundedBorder)
                 if clip.title != nil {
-                    TextField("Text",text:Binding(get:{store.selectedClip?.title?.text ?? ""},set:{text in store.editSelected{$0.title?.text=text}}),axis:.vertical).lineLimit(2...6)
+                    TextField("Text",text:Binding(get:{store.selectedClip?.title?.text ?? ""},set:{text in store.editSelected{$0.title=$0.title?.replacingText(text)}}),axis:.vertical).lineLimit(2...6)
                     TitleControls(store:store)
                     HStack { Text("Size"); Slider(value:Binding(get:{store.selectedClip?.title?.fontSize ?? 64},set:{v in store.editSelected{$0.title?.fontSize=v}}),in:16...160,onEditingChanged:gesture) }
                 } else if clip.assetID != nil,clip.freezeFrame == nil {
@@ -192,6 +193,7 @@ struct WorkspaceView: View {
                     }
                     Slider(value:Binding(get:{store.selectedClip?.speed ?? 1},set:{ v in store.setSpeed(v) }),in:0.25...4,step:0.05,onEditingChanged:gesture).accessibilityLabel("Clip speed")
                 }
+                PropertyAnimationControls(store:store)
                 AutomationControls(store:store)
                 HStack {
                     Text("Start").foregroundStyle(.secondary)
@@ -222,8 +224,8 @@ struct WorkspaceView: View {
                 Button("2×"){store.setGrid{$0.bpm=min(400,$0.bpm*2)}}.help("Double tempo")
                 Button("Downbeat"){store.setGrid{grid in if let moved=try? grid.moved(by:store.time(store.playhead,audio:true)-grid.offset){grid=moved}}}.help("Set first downbeat at playhead")
             }
-            HStack{Text("Beats / bar");Stepper(value:Binding(get:{store.document.sequence.musicalGrid?.beatsPerBar ?? 4},set:{v in store.setGrid{$0.beatsPerBar=v}}),in:1...16){Text("\(store.document.sequence.musicalGrid?.beatsPerBar ?? 4)")}}
-            Picker("Division",selection:Binding(get:{store.document.sequence.musicalGrid?.subdivision ?? 1},set:{v in store.setGrid{$0.subdivision=v}})){Text("1").tag(1);Text("½").tag(2);Text("⅓").tag(3);Text("¼").tag(4)}.pickerStyle(.segmented)
+            HStack{Text("Beats / bar");Stepper(value:Binding(get:{store.document.sequence.musicalGrid?.beatsPerBar ?? 4},set:{v in store.setGrid{$0.beatsPerBar=v}}),in:1...32){Text("\(store.document.sequence.musicalGrid?.beatsPerBar ?? 4)")}}
+            Stepper(value:Binding(get:{store.document.sequence.musicalGrid?.subdivision ?? 1},set:{v in store.setGrid{$0.subdivision=v}}),in:1...16){Text("Divisions · \(store.document.sequence.musicalGrid?.subdivision ?? 1)")}.accessibilityLabel("Beat subdivisions")
         }
     }
     private var multicamInspector:some View {

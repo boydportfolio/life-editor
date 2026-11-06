@@ -42,3 +42,32 @@ func concurrentNativeExportsKeepExecutorResponsiveAndProtectCancelledDestination
     #expect(try Data(contentsOf:destination)==original)
     #expect(try FileManager.default.contentsOfDirectory(atPath:directory.path).allSatisfy{!$0.hasPrefix(".life-export-")})
 }
+
+@MainActor @Test(.enabled(if:ProcessInfo.processInfo.environment["LIFE_RUN_MEDIA_INTEGRATION"]=="1"))
+func unwritableNativeExportPreservesDestinationAndProjectAndLeavesNoTemporaryFile()async throws {
+    let files=FileManager.default
+    let directory=files.temporaryDirectory.appendingPathComponent("life-export-denied-"+UUID().uuidString)
+    try files.createDirectory(at:directory,withIntermediateDirectories:true)
+    defer{
+        try? files.setAttributes([.posixPermissions:0o700],ofItemAtPath:directory.path)
+        try? files.removeItem(at:directory)
+    }
+    let destination=directory.appendingPathComponent("existing.mp4"),original=Data("preserve existing delivery".utf8)
+    try original.write(to:destination)
+    let clip=Clip(duration:.init(value:1,timescale:1),graphic:.shape(.init(kind:.rectangle,rect:.init(x:0,y:0,width:1,height:1),fill:.init(red:1,green:0,blue:0),strokeWidth:0)))
+    let document=ProjectDocument(sequence:.init(settings:.init(width:64,height:64),tracks:[.init(name:"Picture",kind:.shape,clips:[clip])]))
+    let snapshot=ProjectSnapshot(document:document),projectBytes=try document.encoded()
+    try files.setAttributes([.posixPermissions:0o555],ofItemAtPath:directory.path)
+    // Prove this process cannot write here, rather than assuming chmod constrains
+    // a root test runner or a filesystem with different permission semantics.
+    let probe=directory.appendingPathComponent("permission-probe")
+    var denied=false
+    do{try Data("probe".utf8).write(to:probe)}catch{denied=true}
+    try #require(denied,"The test needs a destination this process cannot write.")
+    var exportFailed=false
+    do{try await MediaPipeline().export(snapshot,to:destination)}catch{exportFailed=true}
+    #expect(exportFailed)
+    #expect(try Data(contentsOf:destination)==original)
+    #expect(try snapshot.document.encoded()==projectBytes)
+    #expect(try files.contentsOfDirectory(atPath:directory.path)==["existing.mp4"])
+}

@@ -9,6 +9,16 @@ struct CaptionActions:View {
             .buttonStyle(.plain).help("Captions").accessibilityLabel("Captions")
             .popover(isPresented:$expanded){
                 VStack(alignment:.leading,spacing:8){
+                    Picker("Language",selection:$store.transcriptionLocaleIdentifier){
+                        ForEach(LocalTranscription.supportedLocaleIdentifiers,id:\.self){id in
+                            Text(Locale.current.localizedString(forIdentifier:id) ?? id).tag(id)
+                        }
+                    }.accessibilityLabel("Transcription language")
+                    if store.transcribing{action("xmark","Cancel transcription",store.cancelTranscription)}
+                    else{action("waveform.badge.mic","Transcribe on device",store.transcribeSelected)
+                        .disabled(store.selectedClip?.assetID==nil || !LocalTranscription.supports(locale:store.transcriptionLocale))
+                        .help(LocalTranscription.supports(locale:store.transcriptionLocale) ? "On-device recognition":"On-device recognition unavailable for this language")}
+                    Divider()
                     action("plus.bubble","Add caption",store.addManualCaption)
                     action("square.and.arrow.down","Import SRT…",store.importCaptions)
                     action("square.and.arrow.up","Export SRT…",store.exportCaptions)
