@@ -41,20 +41,66 @@ cp LICENSE "$preview_root/LICENSE"
 cp docs/DEPENDENCIES.md "$preview_root/DEPENDENCIES.md"
 cp docs/PREVIEW.md "$preview_root/READ-ME.md"
 python3 - "$preview_root" "$preview_tag" <<'PY'
-import json, pathlib, plistlib, subprocess, sys
+import hashlib, json, os, pathlib, plistlib, re, stat, subprocess, sys
 root=pathlib.Path(sys.argv[1]); app=root/'Life Editor.app'
 info=plistlib.loads((app/'Contents/Info.plist').read_bytes())
-manifest=dict(version=sys.argv[2],commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
-              minimumMacOS=info['LSMinimumSystemVersion'],architecture='arm64',
-              signing='ad-hoc',notarized=False,mediaHelpers=(app/'Contents/Resources/Helpers/ffmpeg').is_file())
-(root/'BUILD.json').write_text(json.dumps(manifest,indent=2)+'\n')
+helpers=app/'Contents/Resources/Helpers'
+helper_pair=all((helpers/name).is_file() and os.access(helpers/name,os.X_OK) for name in ('ffmpeg','ffprobe'))
+source=pathlib.Path('Sources/LifeCore/Document.swift').read_text()
+schema=re.search(r'public static let currentVersion\s*=\s*(\d+)',source)
+if schema is None:
+    raise SystemExit('Could not determine the project document schema version.')
+
+def payload_hashes(directory):
+    result={}
+    for base, dirs, files in os.walk(directory,followlinks=False):
+        dirs.sort(); files.sort()
+        for name in files:
+            path=pathlib.Path(base)/name
+            if path.name=='BUILD.json' and path.parent==directory:
+                continue
+            if stat.S_ISREG(path.lstat().st_mode):
+                relative=path.relative_to(directory).as_posix()
+                result[relative]=hashlib.sha256(path.read_bytes()).hexdigest()
+    return dict(sorted(result.items()))
+
+manifest=dict(manifestVersion=1,version=sys.argv[2],commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
+              projectDocumentSchemaVersion=int(schema.group(1)),minimumMacOS=info['LSMinimumSystemVersion'],architecture='arm64',
+              signing='ad-hoc',notarized=False,mediaHelpers=helper_pair,files=payload_hashes(root))
+(root/'BUILD.json').write_text(json.dumps(manifest,indent=2,sort_keys=True)+'\n')
 PY
 ditto -c -k --sequesterRsrc --keepParent "$preview_root" "$preview_work/$archive_name"
 # Validate the archive and signed app after extraction, not just the build tree.
 mkdir "$preview_work/verify"
 ditto -x -k "$preview_work/$archive_name" "$preview_work/verify"
+python3 - "$preview_work/verify/Life Editor $preview_tag" "$preview_root/BUILD.json" <<'PY'
+import hashlib, json, os, pathlib, stat, sys
+root=pathlib.Path(sys.argv[1]); expected_manifest=pathlib.Path(sys.argv[2])
+manifest_path=root/'BUILD.json'
+if manifest_path.read_bytes() != expected_manifest.read_bytes():
+    raise SystemExit('Extracted BUILD.json differs from the generated manifest.')
+manifest=json.loads(manifest_path.read_text())
+actual={}
+for base, dirs, files in os.walk(root,followlinks=False):
+    dirs.sort(); files.sort()
+    for name in files:
+        path=pathlib.Path(base)/name
+        if path.name=='BUILD.json' and path.parent==root:
+            continue
+        if stat.S_ISREG(path.lstat().st_mode):
+            actual[path.relative_to(root).as_posix()]=hashlib.sha256(path.read_bytes()).hexdigest()
+expected=manifest.get('files')
+if not isinstance(expected,dict):
+    raise SystemExit('BUILD.json has no valid per-file payload manifest.')
+if actual != expected:
+    missing=sorted(set(expected)-set(actual))
+    extra=sorted(set(actual)-set(expected))
+    changed=sorted(key for key in set(actual)&set(expected) if actual[key] != expected[key])
+    raise SystemExit(f'Extracted payload differs from BUILD.json (missing={missing}, extra={extra}, changed={changed}).')
+PY
 codesign --verify --strict "$preview_work/verify/Life Editor $preview_tag/Life Editor.app"
 (cd "$preview_work" && shasum -a 256 "$archive_name" > "$archive_name.sha256")
+(cd "$preview_work" && shasum -a 256 -c "$archive_name.sha256")
 if [[ "$preview_commit" != "$(git rev-parse HEAD)" || -n "$(git status --porcelain)" ]]; then
   print -u2 'Source changed during packaging; archive was not published.'
   exit 1
