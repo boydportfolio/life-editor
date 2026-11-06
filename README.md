@@ -35,7 +35,7 @@ Drag cut boundaries in the timeline or refine them numerically.
 Adjust RGB curves, levels and selective HSL, edit drawing strokes directly, and
 match caption styles across a track. Choose installed font families and weights,
 or add timed emoji and transparent
-image stickers from the toolbar. Animate position and zoom with motion keys,
+image stickers from the toolbar. Animate framing, crop and rotation with motion keys,
 and choose a portrait, square, landscape or 4:5 project canvas. Social safe guides
 stay out of exports.
 
@@ -75,13 +75,13 @@ material, and committed edits support undo.
 
 **Pre-1.0, in active development.** Everyday editing, multicam and creator tools
 are already implemented, with broader workflow and usability validation underway.
-Loops, reverse, speed ramps, advanced color and parts of the creative toolkit
+Loops, reverse, speed ramps and parts of the creative toolkit
 remain on the roadmap.
 
 [Current progress](docs/PROGRESS.md) separates working features from remaining
 work. [Verification](docs/VERIFICATION.md) records actual test results and their
 limits. [Phase 3](docs/PHASE3.md) lays out the creator-toolkit delivery plan.
-The [first public preview](docs/PUBLIC-PREVIEW.md) targets November 1, with
+The [first public preview](docs/PUBLIC-PREVIEW.md) tracks
 release checks and signing status tracked separately from the full 1.0 roadmap.
 
 To build, test or contribute, start with [Contributing](CONTRIBUTING.md).

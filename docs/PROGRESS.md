@@ -100,3 +100,13 @@ cut-field teardown edits, disabled accessibility states and saved project names.
 Final native/helper validation passes 316 tests and the optimized build passes.
 Full keyboard/VoiceOver, failure coverage, installation, real-footage usability
 and M1 measurements remain open; no release or tag is created.
+
+
+November 6 checkpoint: white-balance sampling, explicit caption word timing and
+highlighting, animated crop/rotation, numeric text/drawing/effect curves, selected
+motion-key copy/paste and a monitor-only metronome are integrated in the working
+candidate. Schema 11 preserves the new data. Real on-device speech testing,
+broader property/key selection, adjustable loop crossfades/reverse/speed ramps and
+the remaining workflow/performance gates stay open. See the
+[release validation record](RELEASE-VALIDATION.md) for current checks; this does
+not raise the overall planning estimate or close broad 1.0 requirements.
