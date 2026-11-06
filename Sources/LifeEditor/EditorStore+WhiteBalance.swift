@@ -64,7 +64,7 @@ extension EditorStore {
         }
     }
     func resetWhiteBalance(){editSelected{$0.effects?.removeAll{$0.stableID==WhiteBalance.stableID}}}
-    static func whiteBalanceSourceIsOpaque(_ asset:MediaAsset)async throws->Bool{
+    nonisolated static func whiteBalanceSourceIsOpaque(_ asset:MediaAsset)async throws->Bool{
         let url=asset.preparedURL ?? asset.url
         guard url.isFileURL else{return false}
         if asset.kind == .image {
