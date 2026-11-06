@@ -49,6 +49,10 @@ exported SRT. See the [tested formats](docs/FORMATS.md) for import coverage.
 
 ## Build and try it
 
+[0.1.0-alpha.1 source preview](https://github.com/boydportfolio/life-editor/releases/tag/0.1.0-alpha.1)
+includes frozen-source instructions, checksums and known issues. A signed,
+notarized app download is not available yet.
+
 Requires **macOS 15+, Apple Silicon, and a Swift 6 toolchain with a macOS SDK**.
 
 ```sh

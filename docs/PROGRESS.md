@@ -1,6 +1,6 @@
 # Progress toward 1.0
 
-Updated: 2026-11-03. Overall planning estimate: **about 65%** of the full owner
+Updated: 2026-11-06. Overall planning estimate: **about 65%** of the full owner
 scope, with a rough **60–70% range**. This is an engineering estimate of integrated
 behavior and remaining work, not a percentage of checked boxes, lines of code or
 passing tests. It is not a release-readiness score.
@@ -11,9 +11,9 @@ stay open until every part of the requirement and its acceptance evidence exists
 | Milestone | Evidence and current state | Remaining work |
 |---|---|---|
 | Phase 0: risky foundations | Technical gate verified locally: real layered edit, save/reopen, shared-render export, sample placement and four proxy previews. | M1 performance measurements belong to the release gate. |
-| Phase 1: everyday editing | Most everyday paths implemented: layered editing, guarded placement, rational timing, waveforms/proxies, automation, project recovery and six export formats. | Complete track/document commands, broader linked editing and failure coverage, animation beyond volume/opacity, full VFR/HDR/format matrix. |
-| Phase 2: music and multicam | Beat/manual grids, waveform/timecode/marker sync, reviewed clock correction, persistent master, armed switching, range replacement and direct cut refinement are integrated, with a connected four-camera native fixture. | Loops/crossfades, reverse, speed ramps, metronome and broader real-footage/performance workflow validation. |
-| Phase 3: creator toolkit | Original filters/transitions, adjustment layers, tonal controls, text families/entrances, shared background geometry/borders/shadows, text alignment/spacing and layout recipes, editable drawing, RGB curves/levels/selective HSL, caption styles, color picker, position/zoom keyframes, social canvases and SRT/clean-caption delivery are integrated. | White-balance sampling, word highlighting, animated crop/rotation and other general parameter keyframes, and real on-device speech QA. |
+| Phase 1: everyday editing | Most everyday paths implemented: layered editing, guarded placement, rational timing, waveforms/proxies, automation, project recovery and six export formats. | Complete track/document commands, broader linked editing and failure coverage, broader property/key selection, full VFR/HDR/format matrix. |
+| Phase 2: music and multicam | Beat/manual grids, waveform/timecode/marker sync, reviewed clock correction, persistent master, armed switching, range replacement and direct cut refinement are integrated, with a connected four-camera native fixture. | Adjustable loop crossfades, reverse, speed ramps and broader real-footage/performance workflow validation. |
+| Phase 3: creator toolkit | Original filters/transitions, adjustment layers, tonal controls, text families/entrances, shared background geometry/borders/shadows, text alignment/spacing and layout recipes, editable drawing, RGB curves/levels/selective HSL, caption styles, color picker, position/zoom keyframes, social canvases and SRT/clean-caption delivery are integrated. | Broader property/keyframe editing, remaining effects-browser integration and real on-device speech QA. |
 | Phase 4: release quality | CI, optimized source builds, helper licensing, native integration tests and UI render checks are in place. | Full accessibility/keyboard audit, musician/student usability, M1 profiling/adaptive quality, failure matrix and all three demonstrated owner workflows. |
 
 ## Current phase: creator toolkit
@@ -110,3 +110,9 @@ broader property/key selection, adjustable loop crossfades/reverse/speed ramps a
 the remaining workflow/performance gates stay open. See the
 [release validation record](RELEASE-VALIDATION.md) for current checks; this does
 not raise the overall planning estimate or close broad 1.0 requirements.
+
+
+The [source-first 0.1.0-alpha.1 prerelease](https://github.com/boydportfolio/life-editor/releases/tag/0.1.0-alpha.1)
+is now published at `edac39a`, after green hosted CI, 346 native/helper tests,
+clean-source build, package/license/manifest checks and public-download verification.
+This closes the qualified source-preview checkpoint, not the full 1.0 gates.

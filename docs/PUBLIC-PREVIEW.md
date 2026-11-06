@@ -22,14 +22,14 @@ No release or tag was created by those development commits.
 
 ## Preview gates
 
-- [ ] Exact candidate commit passes source CI and local native/helper tests.
+- [x] Exact candidate commit passes source CI and local native/helper tests.
 - [x] Development candidate is built, launched and exercised with decoded local media on a supported Mac.
 - [x] Import, split, music fade, styled title, save/reopen and export pass together.
 - [x] Multicam master audio and switching pass a saved/reopened project smoke check.
-- [ ] Keyboard navigation and the 1280 × 800 workspace receive a visible/manual pass.
-- [ ] Corrupt import, cancelled export and unwritable destination preserve existing work.
-- [ ] Source archive, package contents, dependency notices and checksums are verified.
-- [ ] Release notes match actual features, known issues and signing status.
+- [x] Keyboard navigation and the 1280 × 800 workspace receive a visible/manual pass.
+- [x] Corrupt import, cancelled export and unwritable destination preserve existing work (manual/native checks; see validation limits).
+- [x] Source archive, package contents, dependency notices and checksums are verified.
+- [x] Release notes match actual features, known issues and signing status.
 
 November 4: the [running-app audit](MANUAL-WORKFLOW-AUDIT.md) closes the core
 combined edit/delivery and saved/reopened multicam smoke checks in an optimized
@@ -81,7 +81,10 @@ November 6: the [candidate validation record](RELEASE-VALIDATION.md) records a
 fresh source checkout/build, extracted development-package checks, helper import,
 basic keyboard/workspace smoke and failure preservation. The first frozen
 candidate failed hosted optimized compilation despite local success; the source
-probe actor-isolation correction requires its own final CI/native and packaging
-checks before tagging. The public preview will be source-first, with no consumer
-app download advertised. The release tag/manifests, rather than the historical
-target date above, identify the published candidate.
+probe actor-isolation correction passes final CI/native and packaging checks.
+[0.1.0-alpha.1 is published](https://github.com/boydportfolio/life-editor/releases/tag/0.1.0-alpha.1)
+as a source-first prerelease at `edac39a44a61ea85f63f9867930494f6d6ea0a92`, with
+no consumer app download advertised. The public source and manifest were downloaded
+again: their checksums and all 284 source payload files match. The basic keyboard
+smoke is not full keyboard/VoiceOver acceptance. The release tag/manifests, rather
+than the historical target date above, identify the published candidate.

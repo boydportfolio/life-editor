@@ -80,3 +80,30 @@ the public distribution is source-first.
 Real on-device speech, full VoiceOver/accessibility, mixed/VFR/HDR coverage, full
 disk/disconnected-drive behavior, M1 16 GB performance and musician/student
 usability remain open. Synthetic fixtures do not close real-footage usability.
+
+
+## Published source preview
+
+[0.1.0-alpha.1](https://github.com/boydportfolio/life-editor/releases/tag/0.1.0-alpha.1)
+is published at **`edac39a44a61ea85f63f9867930494f6d6ea0a92`**. This section records
+the result after the frozen source above; the tag is not moved by this documentation.
+
+- [Hosted source CI](https://github.com/boydportfolio/life-editor/actions/runs/42175530685)
+  passes tests, the optimized app build and artifact upload on Xcode 16.4.
+- Frozen local native/helper validation passes **346 tests across 15 suites in
+  59.542 seconds**, with HEAD unchanged before and after the run.
+- An independent clean clone at the released commit passes the optimized README
+  build in **79.04 seconds** without optional helpers. The native-only source app
+  and a pristine extracted helper-bundled package both launch with the helper
+  override unset; signatures and all 36 package payload hashes still match.
+- The custom source archive re-extracts to all **284 tracked files** at the commit,
+  including executable script permissions. No ignored helpers/build caches enter it.
+- Public source, manifest and SHA256SUMS were downloaded after publication. Both
+  checksums pass, and every source payload matches RELEASE-MANIFEST.json.
+
+Source archive SHA-256:
+`2f8878bc72340717c856aa9cafaa6511de1f67f19173491a0b92a794281d2b42`.
+
+The public assets are source, a release manifest and checksums. The ad-hoc app
+archive is retained locally, not offered as a notarized consumer installation.
+The full-product gates above remain open.
