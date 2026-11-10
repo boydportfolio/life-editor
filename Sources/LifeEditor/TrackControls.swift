@@ -13,6 +13,8 @@ struct TrackControls:View {
                     HStack{
                         Button{store.apply(.reorderTrack(trackID:track.id,to:index+1))}label:{Image(systemName:"arrow.up")}.disabled(index==store.document.sequence.tracks.count-1 || track.isLocked).help("Move track up").accessibilityLabel("Move track up")
                         Button{store.apply(.reorderTrack(trackID:track.id,to:index-1))}label:{Image(systemName:"arrow.down")}.disabled(index==0 || track.isLocked).help("Move track down").accessibilityLabel("Move track down")
+                        Button{store.duplicateTrack(track.id)}label:{Image(systemName:"doc.on.doc").frame(width:28,height:28)}
+                            .disabled(!store.canDuplicateTrack(track.id)).help(store.trackDuplicationUnavailableReason(track.id) ?? "Duplicate track").accessibilityLabel("Duplicate track")
                         Spacer()
                         if track.supportsAudio {
                             Button{store.toggleTrack(track.id,property:"solo")}label:{Image(systemName:track.isSoloed ? "headphones.circle.fill":"headphones.circle").frame(width:30,height:30)}

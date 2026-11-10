@@ -180,10 +180,16 @@ struct TimelineSurface: NSViewRepresentable {
     override func menu(for event:NSEvent)->NSMenu? {
         let point=convert(event.locationInWindow,from:nil)
         guard point.x<visibleRect.minX+header,let row=trackRow(at:point.y) else{return super.menu(for:event)}
-        let menu=NSMenu();for (label,height) in [("Compact",56.0),("Medium",76.0),("Large",140.0),("Tall",220.0)] {
+        let menu=NSMenu();menu.autoenablesItems=false
+        let duplicate=NSMenuItem(title:"Duplicate Track",action:#selector(duplicateTrackFromMenu(_:)),keyEquivalent:"")
+        duplicate.target=self;duplicate.representedObject=tracks[row].id
+        duplicate.isEnabled=store.canDuplicateTrack(tracks[row].id);duplicate.toolTip=store.trackDuplicationUnavailableReason(tracks[row].id)
+        menu.addItem(duplicate);menu.addItem(.separator())
+        for (label,height) in [("Compact",56.0),("Medium",76.0),("Large",140.0),("Tall",220.0)] {
             let item=NSMenuItem(title:label,action:#selector(heightPreset(_:)),keyEquivalent:"");item.target=self;item.representedObject=["id":tracks[row].id.uuidString,"height":String(height)];menu.addItem(item)
         };return menu
     }
+    @objc private func duplicateTrackFromMenu(_ sender:NSMenuItem){guard let id=sender.representedObject as? UUID else{return};store.duplicateTrack(id)}
     @objc private func heightPreset(_ sender:NSMenuItem){guard let data=sender.representedObject as? [String:String],let raw=data["id"],let id=UUID(uuidString:raw),let value=data["height"].flatMap(Double.init) else{return};_ = setTrackHeight(value,for:id)}
     func loadThumbnails(){
         let visible=tracks.enumerated().flatMap{row,track in track.clips.filter{rect($0,row:row).intersects(visibleRect)}}
