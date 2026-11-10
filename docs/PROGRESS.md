@@ -1,6 +1,6 @@
 # Progress toward 1.0
 
-Updated: 2026-11-06. Overall planning estimate: **about 65%** of the full owner
+Updated: 2026-11-10. Overall planning estimate: **about 65%** of the full owner
 scope, with a rough **60–70% range**. This is an engineering estimate of integrated
 behavior and remaining work, not a percentage of checked boxes, lines of code or
 passing tests. It is not a release-readiness score.
@@ -116,3 +116,12 @@ The [source-first 0.1.0-alpha.1 prerelease](https://github.com/boydportfolio/lif
 is now published at `edac39a`, after green hosted CI, 346 native/helper tests,
 clean-source build, package/license/manifest checks and public-download verification.
 This closes the qualified source-preview checkpoint, not the full 1.0 gates.
+
+
+November 10: [property keys, filters and track copies](EDITING-WORKFLOWS-CHECKPOINT.md)
+adds multi-key property copy/paste/delete/navigation, capability-aware animation
+choices, filter drag-to-clip with direct favorites controls, and independent ordinary
+track duplication. Full native/helper checks pass 366 tests and the optimized build
+passes. Native inspection verifies the key/favorite/duplicate controls; pointer-drag
+inspection remains limited by the automation connection. Broad roadmap gates and
+the overall planning estimate remain unchanged.

@@ -31,13 +31,15 @@ Frames from Life Editor exports: a performance title and a styled portrait edit.
 Multicam editing includes four camera previews, reviewed waveform/timecode
 alignment, optional clock-drift correction, and video/audio switching decisions.
 Drag cut boundaries in the timeline or refine them numerically.
+Duplicate an ordinary track to try an independent version of its edit.
 
 Adjust RGB curves, levels and selective HSL, edit drawing strokes directly, and
 match caption styles across a track. Choose installed font families and weights,
 or add timed emoji and transparent
 image stickers from the toolbar. Animate framing, crop and rotation with motion keys,
 and choose a portrait, square, landscape or 4:5 project canvas. Social safe guides
-stay out of exports.
+stay out of exports. Star favorite filters or drag a filter onto a timeline clip.
+Use Animate to select, copy and paste property keys between compatible clips.
 
 Projects save as `.lifeedit` packages. Reference your originals or collect media
 into a portable project. Preview and export use the same compositor; exports use

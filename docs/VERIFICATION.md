@@ -420,3 +420,19 @@ validation passes 307 tests across 15 suites in 54.666 seconds. The reusable
 stress harness passes an additional native round. Actual running-app navigation
 remains separately tracked in the investigation; the full manual release gate
 has not been closed by these automated results.
+
+
+## November 10 editing workflows
+
+The [editing checkpoint](EDITING-WORKFLOWS-CHECKPOINT.md) passes **366 tests across
+15 suites in 59.073 seconds** with native media and pinned helpers enabled. The
+optimized app build and strict ad-hoc/helper checks pass. New checks cover
+retimed/trimmed property-key clipboard clocks, hidden-key preservation, incompatible
+and malformed payload rejection, filter drop targets and legacy effect IDs, and
+independent duplicated track graphs with persistence and undo. Two native fixtures
+compare saved/reopened animated effects with decoded preview and ProRes exports.
+
+Running-app inspection verifies direct favorites/filter controls, fresh-property
+paste access, multi-key copy/delete/paste and track duplicate/undo. Pointer-drag
+automation failed intermittently; manual drag acceptance is not claimed. These
+are development checks on the available M4 Mac, not M1 or full usability acceptance.
