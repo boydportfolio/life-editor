@@ -59,6 +59,7 @@ struct TimelineSurface: NSViewRepresentable {
     var snapX: Double?
     var snapLabel: String?
     var transitionResize:(id:UUID,origin:Double,duration:Double,maximum:Double,sign:Double)?
+    var filterDropTargetID:UUID?
     var dropGuide:Double?
     var waveforms: [UUID:WaveformOverview] = [:]
     var requested: [UUID:URL] = [:]
@@ -451,6 +452,9 @@ struct TimelineSurface: NSViewRepresentable {
             NSGraphicsContext.saveGraphicsState();NSBezierPath(rect:box).addClip();text("◇",NSPoint(x:box.midX-5,y:box.minY+2),color:.black,size:12);NSGraphicsContext.restoreGraphicsState()
             if store.selectedTransition==transition.id {NSColor.white.setStroke();NSBezierPath(rect:box.insetBy(dx:-1,dy:-1)).stroke()}
         }
+        if let id=filterDropTargetID,let row=tracks.firstIndex(where:{$0.clips.contains{$0.id==id}}),let clip=tracks[row].clips.first(where:{$0.id==id}) {
+            NSColor.controlAccentColor.setStroke();let outline=NSBezierPath(roundedRect:rect(clip,row:row).insetBy(dx:-2,dy:-2),xRadius:5,yRadius:5);outline.lineWidth=2;outline.stroke()
+        }
         if let dropGuide {NSColor.white.setStroke();let path=NSBezierPath();path.move(to:NSPoint(x:dropGuide,y:0));path.line(to:NSPoint(x:dropGuide,y:bounds.height));path.lineWidth=2;path.stroke()}
         if let ghost { NSColor.white.withAlphaComponent(0.15).setFill();ghost.fill();NSColor.white.setStroke();NSBezierPath(rect:ghost).stroke() }
         if let snapX { NSColor.systemOrange.setStroke();let p=NSBezierPath();p.move(to:NSPoint(x:snapX,y:0));p.line(to:NSPoint(x:snapX,y:bounds.height));p.stroke();text(snapLabel ?? "Snap",NSPoint(x:snapX+4,y:20),color:.systemOrange) }
@@ -773,14 +777,29 @@ struct TimelineSurface: NSViewRepresentable {
         let pairs=Array(zip(sorted,sorted.dropFirst())).filter{$0.end==$1.start && abs(x($0.end.seconds)-point.x)<24}
         return pairs.min{abs(x($0.0.end.seconds)-point.x)<abs(x($1.0.end.seconds)-point.x)}
     }
+    func filterDropTarget(_ stableID:String,at point:NSPoint)->UUID? {
+        guard point.x>=visibleRect.minX+header,let row=trackRow(at:point.y),
+              let clip=tracks[row].clips.first(where:{rect($0,row:row).contains(point)}),
+              store.canApplyFilter(stableID,to:clip.id) else{return nil}
+        return clip.id
+    }
+    @discardableResult func performFilterDrop(_ stableID:String,at point:NSPoint)->Bool {
+        guard let id=filterDropTarget(stableID,at:point) else{return false}
+        return store.applyFilter(stableID,to:id)
+    }
     override func draggingEntered(_ sender:any NSDraggingInfo)->NSDragOperation {draggingUpdated(sender)}
     override func draggingUpdated(_ sender:any NSDraggingInfo)->NSDragOperation {
+        filterDropTargetID=nil;dropGuide=nil
+        if let raw=sender.draggingPasteboard.string(forType:.string),let id=filterDropTarget(raw,at:convert(sender.draggingLocation,from:nil)){
+            filterDropTargetID=id;needsDisplay=true;return .copy
+        }
         if let pair=dropPair(sender){dropGuide=x(pair.0.end.seconds);needsDisplay=true;return .copy}
-        dropGuide=nil;needsDisplay=true;return []
+        needsDisplay=true;return []
     }
-    override func draggingExited(_ sender:(any NSDraggingInfo)?){dropGuide=nil;needsDisplay=true}
+    override func draggingExited(_ sender:(any NSDraggingInfo)?){filterDropTargetID=nil;dropGuide=nil;needsDisplay=true}
     override func performDragOperation(_ sender:any NSDraggingInfo)->Bool {
-        defer{dropGuide=nil;needsDisplay=true}
+        defer{filterDropTargetID=nil;dropGuide=nil;needsDisplay=true}
+        if let raw=sender.draggingPasteboard.string(forType:.string),performFilterDrop(raw,at:convert(sender.draggingLocation,from:nil)){return true}
         guard let pair=dropPair(sender),let raw=sender.draggingPasteboard.string(forType:.string),let kind=TransitionKind(rawValue:String(raw.dropFirst("life.transition.".count))) else{return false}
         let prior=store.document;store.applyTransition(kind,left:pair.0.id,right:pair.1.id);return prior != store.document
     }
